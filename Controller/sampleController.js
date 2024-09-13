@@ -26,7 +26,7 @@ const storeData = async (req, res) => {
         res.status(200).json({msg:'created you shit'})
     } catch( error ){
         res.status(400).json({msg: error})
-    }p
+    }
 }
 
 

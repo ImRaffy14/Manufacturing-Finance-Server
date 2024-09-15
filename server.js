@@ -12,11 +12,25 @@ const app = express()
 
 //Controllers & Routes
 const testingSocketController = require("./Controller/testingSocketController")
+const accountRoutes = require("./Routes/accounts")
+const authRoutes = require("./Routes/auth")
 
+
+//GET TIME
+function getCurrentDateTime() {
+  const now = new Date();
+  const date = now.toLocaleDateString();
+  const time = now.toLocaleTimeString();
+  return `${date} ${time}`;
+}
 
 //Middlewares
 app.use(cors())
 app.use(express.json())
+app.use((req,res,next) => {
+  console.log(`[${getCurrentDateTime()}]`, req.path, req.method)
+  next()
+})
 
 
 //Socket Server
@@ -81,6 +95,8 @@ app.get('/', (req, res) => {
 
 //API ENDPOINTS
 app.use(process.env.API_SAMPLE, sampleRoutes)
+app.use(process.env.API_ACCOUNT, accountRoutes)
+app.use(process.env.API_AUTH, authRoutes)
 
 
 //DB connection
@@ -102,11 +118,11 @@ mongoose.connect(process.env.MONGGO_URI)
         `);
 
 
-      console.log(`connected to db & listening to the port`, process.env.PORT);
+      console.log(`[${getCurrentDateTime()}] connected to db & listening to the port`, process.env.PORT);
 
       io.on("connection", (socket) => {
         //User Connects
-        console.log(`User is Connected ${socket.id}`)
+        console.log(`[${getCurrentDateTime()}] User is Connected ${socket.id}`)
         
         testingSocketController(socket, io)
         

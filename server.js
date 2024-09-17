@@ -14,7 +14,7 @@ const app = express()
 const testingSocketController = require("./Controller/testingSocketController")
 const accountRoutes = require("./Routes/accounts")
 const authRoutes = require("./Routes/auth")
-
+const auditTrailRoute = require("./Routes/auditTrails")
 
 //GET TIME
 function getCurrentDateTime() {
@@ -97,6 +97,7 @@ app.get('/', (req, res) => {
 app.use(process.env.API_SAMPLE, sampleRoutes)
 app.use(process.env.API_ACCOUNT, accountRoutes)
 app.use(process.env.API_AUTH, authRoutes)
+app.use(process.env.API_TRAILS, auditTrailRoute)
 
 
 //DB connection

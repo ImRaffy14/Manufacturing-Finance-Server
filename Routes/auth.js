@@ -1,10 +1,20 @@
 const express = require('express');
 const mongoose = require('mongoose')
 const accounts = require('../Model/accountsModel')
+const auditTrails = require('../Model/auditTrailsModel')
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 const router = express.Router()
+
+
+//GET TIME
+function getCurrentDateTime() {
+    const now = new Date();
+    const date = now.toLocaleDateString();
+    const time = now.toLocaleTimeString();
+    return `${date} ${time}`;
+  }
 
 
 //LOGIN ROUTE
@@ -21,7 +31,12 @@ router.post('/login', async (req, res) => {
         if(!isMatch){
             return res.status(400).json({msg: "Invalid Credentials"})
         }
+        
+        //SAVING THE LOGIN INFO TO AUDIT TRAILS
+        const newTrail = new auditTrails ({dateTime: getCurrentDateTime(), userId: user._id, userName,  role: user.role, action: "LOGIN", description: "Logged in to the system."})
+        await newTrail.save()
 
+        //GENERATES TOKENS AFTER LOGIN REQUEST MATCHED
         const token = jwt.sign({id: user._id}, process.env.JWT_SECRET,{ expiresIn: '1h'})
 
         res.json({token})

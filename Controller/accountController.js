@@ -2,12 +2,14 @@ const mongoose = require('mongoose')
 const accounts = require('../Model/accountsModel')
 const bcrypt = require('bcryptjs');
 
-
+//GET ALL ACCOUNTS DATA
 const getAccounts = async (req, res) => {
     const account = await accounts.find({}).sort({createdAt : -1})
     res.status(200).json(account)
 }
 
+
+//CREATE NEW ACCOUNT
 const createAccount = async (req, res) =>{
 
     const { image, userName, password, email, fullName, role } = req.body

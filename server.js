@@ -15,6 +15,7 @@ const testingSocketController = require("./Controller/testingSocketController")
 const accountRoutes = require("./Routes/accounts")
 const authRoutes = require("./Routes/auth")
 const auditTrailRoute = require("./Routes/auditTrails")
+const auditTrailSocket = require("./Controller/auditTrailSocketContoller")
 
 //GET TIME
 function getCurrentDateTime() {
@@ -126,6 +127,9 @@ mongoose.connect(process.env.MONGGO_URI)
         console.log(`[${getCurrentDateTime()}] User is Connected ${socket.id}`)
         
         testingSocketController(socket, io)
+
+        //AUDIT TRAILS SOCKET
+        auditTrailSocket(socket, io)
         
          //User Disconnects
         socket.on("disconnect", () => {

@@ -34,13 +34,18 @@ router.post('/login', async (req, res) => {
         
         //SAVING THE LOGIN INFO TO AUDIT TRAILS
         const newTrail = new auditTrails ({dateTime: getCurrentDateTime(), userId: user._id, userName,  role: user.role, action: "LOGIN", description: "Logged in to the system."})
-        await newTrail.save()
+        const savedTrails = await newTrail.save()
 
+        const trailsData = await auditTrails.find({}).sort({createdAt : -1})
+        if(savedTrails){
+            req.io.emit("receive_audit_trails", trailsData)
+        }
         //GENERATES TOKENS AFTER LOGIN REQUEST MATCHED
         const token = jwt.sign({id: user._id}, process.env.JWT_SECRET,{ expiresIn: '1h'})
 
         res.json({token})
-    
+        
+        
     }
     catch (err){
         res.status(500).json({err: err.message, message: "Server Error"})

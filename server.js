@@ -26,15 +26,6 @@ function getCurrentDateTime() {
   return `${date} ${time}`;
 }
 
-//Middlewares
-app.use(cors())
-app.use(express.json())
-app.use((req,res,next) => {
-  console.log(`[${getCurrentDateTime()}]`, req.path, req.method)
-  next()
-})
-
-
 //Socket Server
 const server = http.createServer(app)
 const io = new Server(server, {
@@ -43,6 +34,19 @@ const io = new Server(server, {
     methods: ['GET', 'POST']
   }
 })
+
+//Middlewares
+app.use(cors())
+app.use(express.json())
+app.use((req,res,next) => {
+  console.log(`[${getCurrentDateTime()}]`, req.path, req.method)
+  next()
+})
+app.use((req, res, next) => {
+  req.io = io;
+  next();
+});
+
 
 
 

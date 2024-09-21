@@ -1,5 +1,6 @@
 const express = require('express')
 const { getAccounts, createAccount } = require("../Controller/accountController")
+const upload = require('../middleware/multer')
 
 const router = express.Router()
 
@@ -8,6 +9,6 @@ const router = express.Router()
 router.get('/', getAccounts)
 
 //ADD ACCOUNT / CREATE ACCOUNTS
-router.post('/CreateAccount', createAccount)
+router.post('/CreateAccount', upload.single("image"), createAccount)
 
 module.exports = router

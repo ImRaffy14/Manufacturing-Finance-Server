@@ -5,7 +5,7 @@ const Schema = mongoose.Schema
 const accountSchema = new Schema({
     image:{
         type: String,
-        default: "bobo kaba? angelo???"
+        required: true
     },
 
     userName:{

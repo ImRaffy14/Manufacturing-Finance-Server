@@ -30,22 +30,23 @@ const createAccount = async (req, res) =>{
             return
         }
         
-        let imageUrl = "https://res.cloudinary.com/dpyhkumle/image/upload/v1726909259/profile_placeholder_zzmmqd.png";
+        let public_id = "";
+        let imageUrl = "";
         if (req.file) {
           const result = await cloudinary.uploader.upload(req.file.path, {
             folder: "profiles",
           });
           imageUrl = result.secure_url;
-    
+          public_id = result.public_id
           fs.unlinkSync(req.file.path);
         }
 
         const hashedPassword = await bcrypt.hash(password, 10)
     
-        const newAccount = new accounts({ image: imageUrl, userName, password: hashedPassword, email, fullName, role })
-        await newAccount.save()
+        const newAccount = new accounts({ image: {public_id: public_id, secure_url: imageUrl}, userName, password: hashedPassword, email, fullName, role })
+        const data = await newAccount.save()
     
-        res.status(200).json({msg : `Account for ${fullName} is created`})
+        res.status(200).json({msg : `Account for ${fullName} is created`, dataUser: {userName: data.userName, user_id: data._id}})
     }
     catch (err) {
         res.status(500).json({ msg: err.message });
@@ -54,7 +55,79 @@ const createAccount = async (req, res) =>{
     }
 }
 
+//UPDATE ACCOUNT
+const updateAccount = async (req, res) => {
+    const{ userId, userName, password, email, fullName, role } = req.body
+
+    try{
+        const existingUser = await accounts.findById(userId);
+        if (!existingUser) {
+        return res.status(404).json({ message: 'User not found' });
+        }
+
+        const update = {};
+
+        if (userName && userName !== existingUser.userName) {
+            update.userName = userName;
+          }
+
+        if (password && password !== existingUser.password) {
+        const hashedPassword = await bcrypt.hash(password, 10);
+        update.password = hashedPassword;
+        }
+
+        if (email && email !== existingUser.email) {
+            update.email = email;
+          }
+
+        if (fullName && fullName !== existingUser.fullName) {
+        update.fullName = fullName;
+        }
+
+        if (role && role !== existingUser.role) {
+            update.role = role;
+          }
+
+        const updatedUser = await accounts.findByIdAndUpdate(userId, update, { new: true });
+        
+        if(updatedUser){
+            const result = await accounts.find({}).sort({createdAt : -1})
+            req.io.emit("receive_accounts", result)
+
+            res.status(200).json({ message: 'User updated successfully' });
+        }
+
+    }
+    catch(err){
+        res.status(500).json({error: err.message})
+    }   
+}
+
+
+//DELETE ACCOUNT
+const deleteAccount = async (req, res) => {
+        const { userId } = req.body
+
+    try{
+        const deletedUser = await accounts.findByIdAndDelete(userId);
+
+        if (!deletedUser) {
+        return res.status(404).json({ message: 'User not found' });
+    }
+
+    const result = await accounts.find({}).sort({createdAt : -1})
+    req.io.emit("receive_accounts", result)
+    res.status(200).json({ message: 'User account deleted successfully' });
+
+    }
+    catch(err){
+        res.status(500).json({error: err.message})
+    }
+}
+
 module.exports = {
     getAccounts,
-    createAccount
+    createAccount,
+    updateAccount,
+    deleteAccount
 } 

@@ -17,6 +17,7 @@ const authRoutes = require("./Routes/auth")
 const auditTrailRoute = require("./Routes/auditTrails")
 const auditTrailSocket = require("./Controller/auditTrailSocketContoller")
 const invoiceSocket = require("./Controller/invoiceSocketController")
+const accountSocket = require("./Controller/accountSocketController")
 
 //GET TIME
 function getCurrentDateTime() {
@@ -134,6 +135,7 @@ mongoose.connect(process.env.MONGGO_URI)
         testingSocketController(socket, io)
         auditTrailSocket(socket, io)
         invoiceSocket(socket, io)
+        accountSocket(socket, io)
         
          //User Disconnects
         socket.on("disconnect", () => {

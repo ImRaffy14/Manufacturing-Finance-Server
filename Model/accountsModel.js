@@ -4,8 +4,14 @@ const Schema = mongoose.Schema
 
 const accountSchema = new Schema({
     image:{
-        type: String,
-        required: true
+        public_id:{
+            type: String,
+            required: true
+        },
+        secure_url:{
+            type:String,
+            required: true
+        }
     },
 
     userName:{

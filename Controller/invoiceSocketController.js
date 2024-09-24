@@ -1,6 +1,12 @@
 const invoiceRecords = require("../Model/invoiceRecordsModel")
 
 module.exports = (socket, io) => {
+
+    const getInvoice = async (data) => {
+        const result = await invoiceRecords.find({}).sort({createdAt: -1})
+        socket.emit("receive_pending_invoice", result)
+    }
+
     const createInvoice = async (data) => {
         
         try{
@@ -21,7 +27,10 @@ module.exports = (socket, io) => {
                 totalAmount: data.totalAmount})
 
             const response = await newInvoice.save()
-            io.emit("response_create_invoice", response)
+            socket.emit("response_create_invoice", response)
+
+            const result = await invoiceRecords.find({}).sort({createdAt: -1})
+            io.emit("receive_pending_invoice", result)
         }
         catch(err){
             console.log(err.message)
@@ -30,4 +39,5 @@ module.exports = (socket, io) => {
 
     //LISTEN EVENTS
     socket.on("create_invoice", createInvoice)
+    socket.on("get_pending_invoice", getInvoice)
 }

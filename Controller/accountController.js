@@ -50,8 +50,6 @@ const createAccount = async (req, res) =>{
     }
     catch (err) {
         res.status(500).json({ msg: err.message });
-
-        console.log(err)
     }
 }
 
@@ -106,9 +104,20 @@ const updateAccount = async (req, res) => {
 
 //DELETE ACCOUNT
 const deleteAccount = async (req, res) => {
-        const { userId } = req.body
+        const { userId, userName, password } = req.body
 
     try{
+
+        const user = await accounts.findOne({ userName })
+        if(!user){
+            return res.status(400).json({msg: "Invalid Credentials"})
+        }
+
+        const isMatch = await bcrypt.compare(password, user.password)
+        if(!isMatch){
+            return res.status(400).json({msg: "Invalid Credentials"})
+        }
+
         const deletedUser = await accounts.findByIdAndDelete(userId);
 
         if (!deletedUser) {

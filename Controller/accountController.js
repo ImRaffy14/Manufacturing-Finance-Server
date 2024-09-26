@@ -104,10 +104,12 @@ const updateAccount = async (req, res) => {
 
 //DELETE ACCOUNT
 const deleteAccount = async (req, res) => {
-        const { userId, userName, password } = req.body
+        const { userId, userName, password, public_id } = req.body
 
     try{
 
+        console.log(public_id)
+        
         const user = await accounts.findOne({ userName })
         if(!user){
             return res.status(400).json({msg: "Invalid Credentials"})
@@ -123,6 +125,13 @@ const deleteAccount = async (req, res) => {
         if (!deletedUser) {
         return res.status(404).json({ message: 'User not found' });
     }
+
+       await cloudinary.uploader.destroy(public_id,(error, result) => {
+            if(error){
+                console.log(error)
+            }
+            console.log(result)
+       })
 
     const result = await accounts.find({}).sort({createdAt : -1})
     req.io.emit("receive_accounts", result)

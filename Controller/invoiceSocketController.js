@@ -1,9 +1,10 @@
 const invoiceRecords = require("../Model/invoiceRecordsModel")
+const { getPendingSalesData } = require("../Model/invoiceAggregation")
 
 module.exports = (socket, io) => {
 
     const getInvoice = async (data) => {
-        const result = await invoiceRecords.find({}).sort({createdAt: -1})
+        const result = await getPendingSalesData()
         socket.emit("receive_pending_invoice", result)
     }
 
@@ -29,7 +30,7 @@ module.exports = (socket, io) => {
             const response = await newInvoice.save()
             socket.emit("response_create_invoice", response)
 
-            const result = await invoiceRecords.find({}).sort({createdAt: -1})
+            const result = await getPendingSalesData()
             io.emit("receive_pending_invoice", result)
         }
         catch(err){

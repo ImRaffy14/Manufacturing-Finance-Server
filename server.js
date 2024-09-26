@@ -27,17 +27,24 @@ function getCurrentDateTime() {
   return `${date} ${time}`;
 }
 
+//ALLOWED DOMAINS
+const allowedDomains = ['https://finance.jjm-manufacturing.com', 'http://localhost:5173'];
+const corsOptions = {
+  origin: allowedDomains,
+  credentials: true
+};
+
 //Socket Server
 const server = http.createServer(app)
 const io = new Server(server, {
   cors:{
-    origin:"*",
+    origin:['https://finance.jjm-manufacturing.com', 'http://localhost:5173'],
     methods: ['GET', 'POST']
   }
 })
 
 //Middlewares
-app.use(cors())
+app.use(cors(corsOptions))
 app.use(express.json())
 app.use((req,res,next) => {
   console.log(`[${getCurrentDateTime()}]`, req.path, req.method)

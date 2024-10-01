@@ -48,7 +48,7 @@ const io = new Server(server, {
 app.use(cors(corsOptions))
 app.use(express.json())
 app.use((req,res,next) => {
-  console.log(`[${getCurrentDateTime()}]`, req.path, req.method)
+  console.log(`[${getCurrentDateTime()}]`, req.ip, req.path, req.method)
   next()
 })
 app.use((req, res, next) => {

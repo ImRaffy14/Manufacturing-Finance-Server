@@ -1,9 +1,14 @@
+require('dotenv').config()
+
 const auditTrailsData = require('../Model/auditTrailsModel')
+const { encryptData } = require("../middleware/encryption")
+
 
 //GET AUDIT TRAILS DATA
 const auditTrailsRecord = async (req, res) => {
     const data = await auditTrailsData.find({}).sort({createdAt : -1})
-    res.status(200).json(data)
+    const result = encryptData(data, process.env.ENCRYPT_KEY)
+    res.status(200).json(result)
 }
 
 //GET TIME

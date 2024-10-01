@@ -1,19 +1,22 @@
+require('dotenv').config()
+
 const mongoose = require('mongoose')
 const accounts = require('../Model/accountsModel')
 const bcrypt = require('bcryptjs');
 const cloudinary = require('../utils/cloudinaryConfig')
-const fs = require("fs"); 
+const fs = require("fs");
+const { encryptData } = require("../middleware/encryption")
 
 //GET ALL ACCOUNTS DATA
 const getAccounts = async (req, res) => {
     const account = await accounts.find({}).sort({createdAt : -1})
-    res.status(200).json(account)
+    const result = encryptData(account, process.env.ENCRYPT_KEY)
+    res.status(200).json(result)
 }
 
 
 //CREATE NEW ACCOUNT
 const createAccount = async (req, res) =>{
-
     
     const { userName, password, email, fullName, role } = req.body
 

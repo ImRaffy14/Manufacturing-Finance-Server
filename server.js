@@ -18,6 +18,7 @@ const auditTrailRoute = require("./Routes/auditTrails")
 const auditTrailSocket = require("./Controller/auditTrailSocketContoller")
 const invoiceSocket = require("./Controller/invoiceSocketController")
 const accountSocket = require("./Controller/accountSocketController")
+const budgetRequestRoute = require("./Routes/budgetRequest")
 
 //GET TIME
 function getCurrentDateTime() {
@@ -112,7 +113,7 @@ app.use(process.env.API_SAMPLE, sampleRoutes)
 app.use(process.env.API_ACCOUNT, accountRoutes)
 app.use(process.env.API_AUTH, authRoutes)
 app.use(process.env.API_TRAILS, auditTrailRoute)
-
+app.use(process.env.API_REQUEST_BUDGET, budgetRequestRoute)
 
 //DB connection
 mongoose.connect(process.env.MONGGO_URI)

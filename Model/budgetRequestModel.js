@@ -5,7 +5,7 @@ const schema = mongoose.Schema
 const budgetRequestSchema = new schema({
     typeOfRequest: {type: String, required:true},
     category: {type: String, required:true},
-    reason: {type: String, required:true},
+    reason: {type: String },
     totalRequest: {type: Number, required:true},
     documents: {type: String, required:true},
     status: {type: String, required:true},

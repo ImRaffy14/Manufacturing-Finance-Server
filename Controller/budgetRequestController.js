@@ -15,7 +15,19 @@ const getBudgetRequest = async (req, res) => {
 
 // POST BUDGET REQUEST FROM DIFFERENT SUBSYSTEM
 const addBudgetRequest = async (req, res) => {
-    console.log(req.body)
+    const { status, totalBudget, category, reason, documents } = req.body
+
+    try{
+        const newRequest = new budgetRequestData ({ typeOfRequest: 'Budget', category, reason: reason, totalRequest: totalBudget, documents, status, comment: '' })
+        const saveRequest = await newRequest.save()
+
+        if(saveRequest){
+            res.status(200).json({msg: 'tanginamo ba?'})
+        }
+    }
+    catch (err){
+        res.status(401).json({err: err.message})
+    }
 }
 
 module.exports = {

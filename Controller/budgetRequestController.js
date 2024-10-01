@@ -15,7 +15,7 @@ const getBudgetRequest = async (req, res) => {
 
 // POST BUDGET REQUEST FROM DIFFERENT SUBSYSTEM
 const addBudgetRequest = async (req, res) => {
-    console.log(req)
+    console.log(req.body)
 }
 
 module.exports = {

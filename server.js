@@ -29,7 +29,7 @@ function getCurrentDateTime() {
 }
 
 //ALLOWED DOMAINS
-const allowedDomains = ['https://finance.jjm-manufacturing.com', 'http://localhost:5173'];
+const allowedDomains = ['https://finance.jjm-manufacturing.com'];
 const corsOptions = {
   origin: allowedDomains,
   credentials: true

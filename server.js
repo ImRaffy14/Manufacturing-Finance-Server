@@ -29,11 +29,7 @@ function getCurrentDateTime() {
 }
 
 //ALLOWED DOMAINS
-const allowedDomains = ['https://finance.jjm-manufacturing.com'];
-const corsOptions = {
-  origin: allowedDomains,
-  credentials: true
-};
+const allowedOrigins = ['https://finance.jjm-manufacturing.com', 'http://localhost:5173'];
 
 //Socket Server
 const server = http.createServer(app)
@@ -45,7 +41,16 @@ const io = new Server(server, {
 })
 
 //Middlewares
-app.use(cors(corsOptions))
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true); // Allow requests with no origin (like from curl or Postman)
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  }
+}))
 app.use(express.json())
 app.use((req,res,next) => {
   console.log(`[${getCurrentDateTime()}]`, req.ip, req.path, req.method)
@@ -147,7 +152,7 @@ mongoose.connect(process.env.MONGGO_URI)
         
          //User Disconnects
         socket.on("disconnect", () => {
-          console.log(`Client disconnected ${socket.id}`)
+          console.log(`[${getCurrentDateTime()}] Client disconnected ${socket.id}`)
         })
       })
     })

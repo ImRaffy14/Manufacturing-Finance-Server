@@ -53,7 +53,7 @@ app.use(cors({
 }))
 app.use(express.json())
 app.use((req,res,next) => {
-  console.log(`[${getCurrentDateTime()}] ${req.protocol}://${req.get('host')} |`, req.path, req.method)
+  console.log(`[${getCurrentDateTime()}] ${req.protocol}://${req.hostname} |`, req.path, req.method)
   next()
 })
 app.use((req, res, next) => {

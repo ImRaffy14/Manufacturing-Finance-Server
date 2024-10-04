@@ -28,6 +28,8 @@ const addBudgetRequest = async (req, res) => {
 
         if(saveRequest){
             res.status(200).json({msg: 'Your Request is on pending'})
+            const requestData = await pendingRequests()
+            req.io.emit('receive_budget_request_pending', requestData)
         }
     }
     catch (err){

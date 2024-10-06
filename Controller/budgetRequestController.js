@@ -2,6 +2,7 @@ require('dotenv').config()
 
 const budgetRequestData = require("../Model/budgetRequestModel")
 const { pendingRequests, processedRequestBudget } = require("../Model/budgetRequestAggregation")
+const auditTrails = require('../Model/auditTrailsModel')
 const { encryptData } = require("../middleware/encryption")
 
 //GET ALL BUDGET REQUEST
@@ -30,6 +31,8 @@ const addBudgetRequest = async (req, res) => {
             res.status(200).json({msg: 'Your Request is on pending'})
             const requestData = await pendingRequests()
             req.io.emit('receive_budget_request_pending', requestData)
+
+            req.io.emit('receive_payable_length', requestData.pendingBudgetRequestsCount.totalCount)
         }
     }
     catch (err){
@@ -64,7 +67,16 @@ const updateBudgetRequests = async (req, res) => {
         }
 
         res.status(200).json({msg: `Budget Request from ${requestId} is now on process`})
+        const requestDataPending = await pendingRequests()
+        const requestDataprocessed = await processedRequestBudget()
+        req.io.emit('receive_budget_request_pending', requestDataPending)
+        req.io.emit('receive_budget_request_processed', requestDataprocessed)
 
+        const trailsData = await auditTrails.find({}).sort({createdAt : -1})
+        req.io.emit("receive_audit_trails", trailsData)
+
+        req.io.emit('receive_payable_length', requestDataPending.pendingBudgetRequestsCount.totalCount)
+  
     }
     catch(error){
         res.status(500).json({error: error.message})

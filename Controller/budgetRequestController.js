@@ -37,8 +37,43 @@ const addBudgetRequest = async (req, res) => {
     }
 }
 
+// UPDATE BUDGET REQUESTS
+const updateBudgetRequests = async (req, res) => {
+    const { _id, requestId, department, typeOfRequest, category, reason, totalRequest, documents, status, comment } = req.body
+
+    try{
+
+        const updatedRequest = await budgetRequestData.findByIdAndUpdate(
+            _id, // Find document by _id
+            {
+                requestId,
+                department,
+                typeOfRequest,
+                category,
+                reason,
+                totalRequest,
+                documents,
+                status,
+                comment
+            },
+            { new: true } 
+        )
+
+        if(!updatedRequest){
+            return res.status(404).json({msg: "Budget request not found"})
+        }
+
+        res.status(200).json({msg: `Budget Request from ${requestId} is now on process`})
+
+    }
+    catch(error){
+        res.status(500).json({error: error.message})
+    }
+}
+
 module.exports = {
     getPendingBudgetRequest,
     getProcessedBudgetRequest,
-    addBudgetRequest
+    addBudgetRequest,
+    updateBudgetRequests,
 }

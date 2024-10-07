@@ -5,7 +5,7 @@ const path = require("path");
 // Set storage engine
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-      cb(null, path.join(__dirname, "../uploads")); // Ensure this path exists
+      cb(null, path.join(__dirname, "../uploads/images")); // Ensure this path exists
     },
     filename: (req, file, cb) => {
       cb(null, Date.now() + "-" + file.originalname);

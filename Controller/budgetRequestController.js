@@ -4,6 +4,8 @@ const budgetRequestData = require("../Model/budgetRequestModel")
 const { pendingRequests, processedRequestBudget } = require("../Model/budgetRequestAggregation")
 const auditTrails = require('../Model/auditTrailsModel')
 const { encryptData } = require("../middleware/encryption")
+const cloudinary = require('../utils/cloudinaryConfig')
+const fs = require("fs");
 
 //GET ALL BUDGET REQUEST
 const getPendingBudgetRequest = async (req, res) => {
@@ -37,6 +39,41 @@ const addBudgetRequest = async (req, res) => {
     }
     catch (err){
         res.status(401).json({err: err.message})
+    }
+}
+
+// POST BUDGET REQUEST FROM FINANCE CLIENT
+const addBudgetRequestFinance = async(req, res) => {
+    const { typeOfRequest, totalRequest, category, reason  } = req.body
+    
+    try{
+
+        let documentUrl = "";
+        if (req.file) {
+          const result = await cloudinary.uploader.upload(req.file.path, {
+            folder: "documents",
+            resource_type: "raw",
+            public_id: req.file.originalname
+          });
+          documentUrl = result.secure_url;
+          fs.unlinkSync(req.file.path);
+        }
+
+        const newRequest = new budgetRequestData ({requestId: "0000", department: "Finance", typeOfRequest, category, reason, totalRequest, documents: documentUrl, status: "Pending", comment: '' })
+        const saveRequest = await newRequest.save()
+
+        if(saveRequest){
+            res.status(200).json({msg: 'Your Request is on pending'})
+            const requestData = await pendingRequests()
+            req.io.emit('receive_budget_request_pending', requestData)
+
+            req.io.emit('receive_payable_length', requestData.pendingBudgetRequestsCount.totalCount)
+        }
+    }
+    catch (err){
+        res.status(401).json({err: err.message})
+        console.log(err.message)
+        fs.unlinkSync(req.file.path);
     }
 }
 
@@ -87,5 +124,6 @@ module.exports = {
     getPendingBudgetRequest,
     getProcessedBudgetRequest,
     addBudgetRequest,
+    addBudgetRequestFinance,
     updateBudgetRequests,
 }

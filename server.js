@@ -20,6 +20,7 @@ const invoiceSocket = require("./Controller/invoiceSocketController")
 const accountSocket = require("./Controller/accountSocketController")
 const budgetRequestRoute = require("./Routes/budgetRequest")
 const notificationLengthSocket = require("./Controller/notificationLengthSocketController")
+const reviewPaymentTransactionSocket = require("./Controller/reviewPaymentTransactionSocketController")
 
 //GET TIME
 function getCurrentDateTime() {
@@ -54,7 +55,7 @@ app.use(cors({
 }))
 app.use(express.json())
 app.use((req,res,next) => {
-  console.log(`[${getCurrentDateTime()}] ${req.protocol}://${req.hostname} |`, req.path, req.method)
+  console.log(`[${getCurrentDateTime()}] ${req.headers.origin} |`, req.path, req.method)
   next()
 })
 app.use((req, res, next) => {
@@ -151,6 +152,7 @@ mongoose.connect(process.env.MONGGO_URI)
         invoiceSocket(socket, io)
         accountSocket(socket, io)
         notificationLengthSocket(socket, io)
+        reviewPaymentTransactionSocket(socket, io)
         
          //User Disconnects
         socket.on("disconnect", () => {

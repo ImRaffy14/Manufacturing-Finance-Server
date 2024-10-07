@@ -32,7 +32,18 @@ const getNonPendingRecords = async () => {
     return records;
   };
 
+const getPaidRecords = async () => {
+  const records = await invoiceRecord.find({
+    Status: 'Paid' 
+  }).sort({createdAt : -1});
+
+  const recordsCount = records.length
+
+  return {records, recordsCount}
+}
+
 module.exports = { 
     getPendingSalesData,
-    getNonPendingRecords
+    getNonPendingRecords,
+    getPaidRecords
  };

@@ -7,7 +7,7 @@ const budgetRequestSchema = new schema({
     department: {type: String, required: true},
     typeOfRequest: {type: String, required:true},
     category: {type: String, required:true},
-    reason: {type: String },
+    reason: {type: String, required: true },
     totalRequest: {type: Number, required:true},
     documents: {type: String, required:true},
     status: {type: String, required:true},

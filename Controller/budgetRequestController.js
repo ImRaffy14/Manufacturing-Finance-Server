@@ -23,10 +23,10 @@ const getProcessedBudgetRequest = async (req, res) => {
 
 // POST BUDGET REQUEST FROM DIFFERENT SUBSYSTEM
 const addBudgetRequest = async (req, res) => {
-    const {_id, department, status, totalBudget, category, reason, documents } = req.body
+    const { approvalId, department, status, totalBudget, category, reason, documents } = req.body
 
     try{
-        const newRequest = new budgetRequestData ({requestId: _id, department, typeOfRequest: 'Budget', category, reason: reason, totalRequest: totalBudget, documents, status, comment: '' })
+        const newRequest = new budgetRequestData ({requestId: approvalId, department, typeOfRequest: 'Budget', category, reason: reason, totalRequest: totalBudget, documents, status, comment: '' })
         const saveRequest = await newRequest.save()
 
         if(saveRequest){

@@ -6,6 +6,7 @@ const auditTrails = require('../Model/auditTrailsModel')
 const { encryptData } = require("../middleware/encryption")
 const cloudinary = require('../utils/cloudinaryConfig')
 const fs = require("fs");
+const axios = require("axios")
 
 //GET ALL BUDGET REQUEST
 const getPendingBudgetRequest = async (req, res) => {
@@ -82,7 +83,8 @@ const updateBudgetRequests = async (req, res) => {
     const { _id, requestId, department, typeOfRequest, category, reason, totalRequest, documents, status, comment } = req.body
 
     try{
-
+        
+        //UPDATES ON FINANCE SERVER
         const updatedRequest = await budgetRequestData.findByIdAndUpdate(
             _id, // Find document by _id
             {
@@ -102,6 +104,33 @@ const updateBudgetRequests = async (req, res) => {
         if(!updatedRequest){
             return res.status(404).json({msg: "Budget request not found"})
         }
+
+        //UPDATES ON OTHER SYSTEM
+        const updateOsData = {
+            _id: requestId,
+            status: status,
+            reason: reason,
+            comment: comment,
+            totalBudget: totalRequest,
+            category: category,
+            documents: documents,
+            department: department,
+        }
+
+        if(requestId === "0000"){
+            
+            try{
+                const resultOs = await axios.post('https://manufacturing-logistic1-client-api.onrender.com/api/financeApproval/approved', updateOsData)
+                if(resultOs){
+                res.status(201).json({msg: `Budget Request from ${requestId} is now on process`})
+            }
+            }
+            catch(error){
+                res.status(500).json({msg: error.message})
+            }
+            
+        }
+
 
         res.status(200).json({msg: `Budget Request from ${requestId} is now on process`})
         const requestDataPending = await pendingRequests()

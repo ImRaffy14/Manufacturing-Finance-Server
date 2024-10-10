@@ -117,26 +117,29 @@ const updateBudgetRequests = async (req, res) => {
             department: department,
         }
 
+
         if(requestId === "0000"){
             
             try{
-                const resultOs = await axios.post('https://manufacturing-logistic1-client-api.onrender.com/api/financeApproval/approved', updateOsData)
-                if(resultOs){
-                res.status(201).json({msg: `Budget Request from ${requestId} is now on process`})
-            }
+                // const resultOs = await axios.post('https://manufacturing-logistic1-client-api.onrender.com/api/financeApproval/approved', updateOsData)
+                // if(resultOs){
+                // res.status(201).json({msg: `Budget Request from ${requestId} is now on process`})
+                // }
             }
             catch(error){
-                res.status(500).json({msg: error.message})
+                // res.status(500).json({msg: error.message})
+
             }
             
         }
 
-
+        //RESPONSE ON FINANCE CLIENT
         res.status(200).json({msg: `Budget Request from ${requestId} is now on process`})
         const requestDataPending = await pendingRequests()
         const requestDataprocessed = await processedRequestBudget()
         req.io.emit('receive_budget_request_pending', requestDataPending)
         req.io.emit('receive_budget_request_processed', requestDataprocessed)
+        req.io.emit('receive_budget_request_length', requestDataPending.onProcessRequestBudgetCount)
 
         const trailsData = await auditTrails.find({}).sort({createdAt : -1})
         req.io.emit("receive_audit_trails", trailsData)

@@ -28,8 +28,10 @@ const pendingRequests = async () => {
     const onProcessRequestBudget = await budgetRequestData.find({
         status: 'On process'
     }).sort({ createdAt: -1})
+    
+    const onProcessRequestBudgetCount = onProcessRequestBudget.length
 
-    return { pendingBudgetRequestsCount, pendingRequestBudget, onProcessRequestBudget }
+    return { pendingBudgetRequestsCount, pendingRequestBudget, onProcessRequestBudget, onProcessRequestBudgetCount}
 }
 
 // ALL APPROVED OR DECLINED DATA

@@ -32,9 +32,9 @@ const getNonPendingRecords = async () => {
     return records;
   };
 
-const getPaidRecords = async () => {
+const getToAuditRecords = async () => {
   const records = await invoiceRecord.find({
-    Status: 'Paid' 
+    Status: 'To review' 
   }).sort({createdAt : -1});
 
   const recordsCount = records.length
@@ -45,5 +45,5 @@ const getPaidRecords = async () => {
 module.exports = { 
     getPendingSalesData,
     getNonPendingRecords,
-    getPaidRecords
+    getToAuditRecords
  };

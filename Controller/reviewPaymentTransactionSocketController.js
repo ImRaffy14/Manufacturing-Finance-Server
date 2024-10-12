@@ -1,9 +1,9 @@
-const { getPaidRecords } = require('../Model/invoiceAggregation')
+const { getToAuditRecords } = require('../Model/invoiceAggregation')
 
 module.exports = (socket, io) => {
 
     const getPaidRecord = async (data) => {
-        const result = await getPaidRecords()
+        const result = await getToAuditRecords()
         socket.emit("receive_paid_records", result)
     }
 

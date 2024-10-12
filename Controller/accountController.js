@@ -110,8 +110,6 @@ const deleteAccount = async (req, res) => {
         const { userId, userName, password, public_id } = req.body
 
     try{
-
-        console.log(public_id)
         
         const user = await accounts.findOne({ userName })
         if(!user){

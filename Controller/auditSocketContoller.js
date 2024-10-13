@@ -1,6 +1,8 @@
 const inflowsTransaction = require('../Model/inflowsTransactionModel')
 const accounts = require('../Model/accountsModel')
 const invoiceRecords = require('../Model/invoiceRecordsModel')
+const { getToAuditRecords } = require('../Model/invoiceAggregation')
+
 const bcrypt = require('bcryptjs')
 
 module.exports = (socket, io) => {
@@ -41,6 +43,14 @@ module.exports = (socket, io) => {
         await invoiceRecords.findByIdAndUpdate(invoiceId, {Status: "Paid"})
 
         socket.emit('receive_audit_authUser', {msg: `Transaction for Invoice ID: ${data.invoiceId} is now on records.`})
+
+        //SEND DATA TO ALL CONNECTED CLIENSTS
+        const result = await inflowsTransaction.find({}).sort({ createdAt: -1})
+        io.emit('receive_audit_history', result)
+
+        const toReviewRecords = await getToAuditRecords()
+        io.emit('receive_paid_records', toReviewRecords)
+
     }
 
     const getAuditRecords = async (data) => {

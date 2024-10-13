@@ -30,12 +30,27 @@ const totalOutflowsAmount = async () => {
 }
 
 // Calculate total cash
-const totalCash = async () => {
+const totalCompanyCash = async () => {
     const inflows = await totalInflowsAmount();
     const outflows = await totalOutflowsAmount();
     return inflows - outflows;
 }
 
+const allocateBudget = async () =>{
+    const totalCash = await totalCompanyCash()
+
+    const operatingExpenses = totalCash * 0.60;
+    const capitalExpenditures = totalCash * 0.25;
+    const emergencyReserve = totalCash * 0.05;
+
+    return {
+        operatingExpenses: operatingExpenses,
+        capitalExpenditures: capitalExpenditures,
+        emergencyReserve: emergencyReserve,
+    };
+}
+
 module.exports = {
-    totalCash
+    totalCompanyCash,
+    allocateBudget
 }

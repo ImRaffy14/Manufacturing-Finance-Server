@@ -22,6 +22,7 @@ const budgetRequestRoute = require("./Routes/budgetRequest")
 const notificationLengthSocket = require("./Controller/notificationLengthSocketController")
 const reviewPaymentTransactionSocket = require("./Controller/reviewPaymentTransactionSocketController")
 const auditSocketController = require("./Controller/auditSocketContoller")
+const budgetProcessingSocket = require("./Controller/budgetProcessingSocketController")
 
 //GET TIME
 function getCurrentDateTime() {
@@ -155,6 +156,7 @@ mongoose.connect(process.env.MONGGO_URI)
         notificationLengthSocket(socket, io)
         reviewPaymentTransactionSocket(socket, io)
         auditSocketController(socket, io)
+        budgetProcessingSocket(socket, io)
         
          //User Disconnects
         socket.on("disconnect", () => {

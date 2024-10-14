@@ -6,7 +6,7 @@ const outflowsTransactionSchema = new schema({
     dateTime: { type: String, required: true },
     approver: { type: String, required: true },
     approverId: { type: String, required: true },
-    requestId: { type: String, required: true },
+    payableId: { type: String, required: true },
     category: { type: String, required: true },
     department: { type: String, required: true },
     totalAmount: { type: Number, required: true }

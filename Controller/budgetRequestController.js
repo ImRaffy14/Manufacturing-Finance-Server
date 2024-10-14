@@ -134,7 +134,7 @@ const updateBudgetRequests = async (req, res) => {
         }
 
         //RESPONSE ON FINANCE CLIENT
-        res.status(200).json({msg: `Budget Request from ${requestId} is now on process`})
+        res.status(200).json({msg: `Budget Request from ${department} is now on process`})
         const requestDataPending = await pendingRequests()
         const requestDataprocessed = await processedRequestBudget()
         req.io.emit('receive_budget_request_pending', requestDataPending)

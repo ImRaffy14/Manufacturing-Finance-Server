@@ -6,6 +6,7 @@ const cors = require('cors')
 const sampleRoutes = require('./Routes/sample')
 const { Server } = require('socket.io')
 const  http  = require('http')
+const jwt = require('jsonwebtoken');
 
 //Express App
 const app = express()
@@ -64,7 +65,21 @@ app.use((req, res, next) => {
   req.io = io;
   next();
 });
+io.use((socket, next) => {
+  const token = socket.handshake.auth.token;
+  if (!token) {
+    return next(new Error('Authentication error: No token provided'));
+  }
 
+  try {
+    // Verify the token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    socket.user = decoded;  
+    next(); 
+  } catch (err) {
+    next(new Error('Authentication error: Invalid token'));
+  }
+});
 
 
 

@@ -2,10 +2,19 @@ const accounts = require('../Model/accountsModel')
 const outflowsTransaction = require('../Model/outflowsTransactionModel')
 const budgetRequestData = require("../Model/budgetRequestModel")
 const { pendingRequests, processedRequestBudget } = require("../Model/budgetRequestAggregation")
+const { allocateBudget } = require("../Model/totalCashAggregation")
 const bcrypt = require('bcryptjs')
 
 module.exports = (socket, io) =>{
 
+    //GET BUDGET ALLOCATION
+    const budgetAllocation = async (data) => {
+        const result = await allocateBudget()
+        socket.emit("receive_budget_allocation", result)
+    }
+
+
+    //FOR APPROVING BUDGET REQUEST
     const approvedBudgetRequest = async (data) => {
     
     //USER AUTH
@@ -44,6 +53,26 @@ module.exports = (socket, io) =>{
        return socket.emit('receive_budget_authUser_invalid', {msg: 'Invalid Credentials'})
     }
 
+
+    //CHECK IF BUDGET IS AVAILABLE
+    if(budgetReqData.status === "Approved"){
+        const availableBudget = await allocateBudget()
+        if(budgetReqData.category === "Operational Expenses"){
+            if(availableBudget.operatingExpenses < budgetReqData.totalRequest){
+                return socket.emit("budget_notfound", {msg: "No available budget for this budget request."})
+            }
+        }
+        else if (budgetReqData.category === "Capital Expenditures"){
+            if(availableBudget.capitalExpenditures < budgetReqData.totalRequest){
+                return socket.emit("budget_notfound", {msg: "No available budget for this budget request."})
+            }
+        }
+        else if (budgetReqData.category === "Emergency Reserves"){
+            if(availableBudget.emergencyReserve < budgetReqData.totalRequest){
+                return socket.emit("budget_notfound", {msg: "No available budget for emergency reserve request."})
+            }
+        }
+    }
     
     //CHECKS IF IT ALREADY RECORDED ON OUTFLOWS DATA
     const payableId = _id
@@ -93,5 +122,6 @@ module.exports = (socket, io) =>{
 
     }
 
+    socket.on("get_budget_allocation", budgetAllocation)
     socket.on("budget_request_data", approvedBudgetRequest)
 }

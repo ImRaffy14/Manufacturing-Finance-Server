@@ -7,6 +7,7 @@ const sampleRoutes = require('./Routes/sample')
 const { Server } = require('socket.io')
 const  http  = require('http')
 const jwt = require('jsonwebtoken');
+const cookieParser = require('cookie-parser');
 
 //Express App
 const app = express()
@@ -41,21 +42,19 @@ const server = http.createServer(app)
 const io = new Server(server, {
   cors:{
     origin:['https://finance.jjm-manufacturing.com', 'http://localhost:5173'],
-    methods: ['GET', 'POST']
+    methods: ['GET', 'POST'],
+    credentials: true
   }
 })
 
 //Middlewares
 app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin) return callback(null, true); // Allow requests with no origin (like from curl or Postman)
-    if (allowedOrigins.indexOf(origin) === -1) {
-      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
-      return callback(new Error(msg), false);
-    }
-    return callback(null, true);
-  }
-}))
+  origin: allowedOrigins,
+  methods: ['GET', 'POST'],
+  credentials: true,
+}));
+
+app.use(cookieParser());
 app.use(express.json())
 app.use((req,res,next) => {
   console.log(`[${getCurrentDateTime()}] ${req.headers.origin} |`, req.path, req.method)
@@ -66,14 +65,26 @@ app.use((req, res, next) => {
   next();
 });
 io.use((socket, next) => {
-  const token = socket.handshake.auth.token;
-  if (!token) {
+  const cookies = socket.handshake.headers.cookie;
+
+  //FOR PARSING COOKIE
+  const cookieObject = {};
+  if (cookies) {
+      cookies.split(';').forEach((cookie) => {
+          const [key, value] = cookie.split('=').map((c) => c.trim());
+          cookieObject[key] = value;
+      });
+  }
+
+  const webSocketToken = cookieObject['webSocketToken'];
+
+  if (!webSocketToken) {
     return next(new Error('Authentication error: No token provided'));
   }
 
   try {
-    // Verify the token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    // VERIFY COOKIE
+    const decoded = jwt.verify(webSocketToken, process.env.WEBSOCKET_JWT_SECRET);
     socket.user = decoded;  
     next(); 
   } catch (err) {
@@ -138,6 +149,8 @@ app.use(process.env.API_ACCOUNT, accountRoutes)
 app.use(process.env.API_AUTH, authRoutes)
 app.use(process.env.API_TRAILS, auditTrailRoute)
 app.use(process.env.API_REQUEST_BUDGET, budgetRequestRoute)
+
+
 
 //DB connection
 mongoose.connect(process.env.MONGGO_URI)

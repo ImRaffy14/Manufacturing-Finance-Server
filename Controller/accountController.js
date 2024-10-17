@@ -131,7 +131,6 @@ const deleteAccount = async (req, res) => {
             if(error){
                 console.log(error)
             }
-            console.log(result)
        })
 
     const result = await accounts.find({}).sort({createdAt : -1})

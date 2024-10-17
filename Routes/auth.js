@@ -41,16 +41,50 @@ router.post('/login', async (req, res) => {
             req.io.emit("receive_audit_trails", trailsData)
         }
         //GENERATES TOKENS AFTER LOGIN REQUEST MATCHED
-        const token = jwt.sign({id: user._id}, process.env.JWT_SECRET,{ expiresIn: '1h'})
+        const token = jwt.sign({id: user._id}, process.env.JWT_SECRET,{ expiresIn: '15m'})
+        
+        //GENERATES REFRESH TOKEN IF ACCESS TOKEN IS EXPIRED
+        const refreshToken = jwt.sign({id: user._id}, process.env.REFRESH_JWT_SECRET,{ expiresIn: '1d'})
 
-        res.json({token})
-        
-        
+        const webSocketToken = jwt.sign({id: user._id}, process.env.WEBSOCKET_JWT_SECRET,{ expiresIn: '1d'})
+
+        res.cookie('refreshToken', refreshToken, {
+            httpOnly: true, 
+            secure: true, 
+            sameSite: 'Strict', 
+            maxAge: 24 * 60 * 60 * 1000 // 1 day expiration
+        });
+
+        res.cookie('webSocketToken', webSocketToken, {
+            httpOnly: true, 
+            secure: true, 
+            sameSite: 'Strict', 
+            maxAge: 24 * 60 * 60 * 1000 // 1 day expiration
+        });
+
+        res.json({token})        
     }
     catch (err){
         res.status(500).json({err: err.message, message: "Server Error"})
     }
 })
+
+// Refresh token route
+router.post('/refresh-token', (req, res) => {
+    const refreshToken = req.cookies.refreshToken; 
+    if (!refreshToken) return res.sendStatus(403); // Forbidden
+
+    jwt.verify(refreshToken, process.env.REFRESH_JWT_SECRET, (err, user) => {
+        if (err) return res.sendStatus(403); // Invalid token
+        
+        const userId = user.id;
+
+        const newAccessToken = jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: '15m' });
+        
+        res.json({ accessToken: newAccessToken });
+    });
+});
+
 
 
 // Verify Token Middleware
@@ -76,6 +110,13 @@ router.get('/protected', verifyToken, async (req, res) => {
     } catch (err) {
         res.status(500).json({ message: 'Server error' });
     }
+});
+
+// Log out
+router.post('/logout', (req, res) => {
+    res.clearCookie('refreshToken', { httpOnly: true, secure: true, sameSite: 'Strict' });
+    res.clearCookie('webSocketToken', { httpOnly: true, secure: true, sameSite: 'Strict' });
+    res.sendStatus(204);
 });
 
 module.exports = router

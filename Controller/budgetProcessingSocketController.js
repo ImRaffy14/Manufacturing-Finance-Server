@@ -3,6 +3,7 @@ const outflowsTransaction = require('../Model/outflowsTransactionModel')
 const budgetRequestData = require("../Model/budgetRequestModel")
 const { pendingRequests, processedRequestBudget } = require("../Model/budgetRequestAggregation")
 const { allocateBudget } = require("../Model/totalCashAggregation")
+const { totalCompanyCash } = require('../Model/totalCashAggregation')
 const bcrypt = require('bcryptjs')
 
 module.exports = (socket, io) =>{
@@ -11,6 +12,12 @@ module.exports = (socket, io) =>{
     const budgetAllocation = async (data) => {
         const result = await allocateBudget()
         socket.emit("receive_budget_allocation", result)
+    }
+
+    //GET BUDGET REPORTS
+    const getBudgetReports = async (data) =>{
+        const result = await outflowsTransaction.find({}).sort({ createdAt: -1 })
+        socket.emit('receive_budget_reports', result)
     }
 
 
@@ -38,8 +45,14 @@ module.exports = (socket, io) =>{
     //GET TIME
     function getCurrentDateTime() {
         const now = new Date();
-        const date = now.toLocaleDateString();
-        const time = now.toLocaleTimeString();
+        const date = now.toLocaleDateString('en-US'); 
+        const time = now.toLocaleTimeString('en-US', { 
+            hour12: false, 
+            hour: '2-digit', 
+            minute: '2-digit', 
+            second: '2-digit' 
+        });
+    
         return `${date} ${time}`;
     }
 
@@ -71,6 +84,9 @@ module.exports = (socket, io) =>{
             if(availableBudget.emergencyReserve < budgetReqData.totalRequest){
                 return socket.emit("budget_notfound", {msg: "No available budget for emergency reserve request."})
             }
+        }
+        else{
+            return socket.emit("budget_notfound", {msg: "Invalid Category."})
         }
     }
     
@@ -109,6 +125,12 @@ module.exports = (socket, io) =>{
         if(!saveOutflow){
             return socket.emit("budget_notfound", {msg: "Error saving budget records."})
         }
+
+        const result = await outflowsTransaction.find({}).sort({ createdAt: -1 })
+        io.emit('receive_budget_reports', result)
+
+        const totalCash = await totalCompanyCash()
+        io.emit("receive_total_cash", totalCash)
     }
 
     //RESPONSE TO FINANCE CLIENT
@@ -122,6 +144,7 @@ module.exports = (socket, io) =>{
 
     }
 
+    socket.on("get_budget_reports", getBudgetReports)
     socket.on("get_budget_allocation", budgetAllocation)
     socket.on("budget_request_data", approvedBudgetRequest)
 }

@@ -2,6 +2,8 @@ const inflowsTransaction = require('../Model/inflowsTransactionModel')
 const accounts = require('../Model/accountsModel')
 const invoiceRecords = require('../Model/invoiceRecordsModel')
 const { getToAuditRecords } = require('../Model/invoiceAggregation')
+const { totalCompanyCash } = require('../Model/totalCashAggregation')
+
 
 const bcrypt = require('bcryptjs')
 
@@ -10,8 +12,14 @@ module.exports = (socket, io) => {
     //GET TIME
     function getCurrentDateTime() {
         const now = new Date();
-        const date = now.toLocaleDateString();
-        const time = now.toLocaleTimeString();
+        const date = now.toLocaleDateString('en-US'); 
+        const time = now.toLocaleTimeString('en-US', { 
+            hour12: false, 
+            hour: '2-digit', 
+            minute: '2-digit', 
+            second: '2-digit' 
+        });
+    
         return `${date} ${time}`;
     }
 
@@ -50,6 +58,9 @@ module.exports = (socket, io) => {
 
         const toReviewRecords = await getToAuditRecords()
         io.emit('receive_paid_records', toReviewRecords)
+
+        const totalCash = await totalCompanyCash()
+        io.emit("receive_total_cash", totalCash)
 
     }
 

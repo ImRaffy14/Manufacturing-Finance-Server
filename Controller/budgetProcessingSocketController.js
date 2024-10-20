@@ -4,6 +4,7 @@ const budgetRequestData = require("../Model/budgetRequestModel")
 const { pendingRequests, processedRequestBudget } = require("../Model/budgetRequestAggregation")
 const { allocateBudget } = require("../Model/totalCashAggregation")
 const { totalCompanyCash } = require('../Model/totalCashAggregation')
+const { aggregateTransactionsCurrentMonth } = require('../Model/collectionAnalyticsAggregation')
 const bcrypt = require('bcryptjs')
 
 module.exports = (socket, io) =>{
@@ -137,11 +138,16 @@ module.exports = (socket, io) =>{
     socket.emit("receive_budget_request", {msg: `Budget request from ${budgetReqData.department} is ${budgetReqData.status === "Declined" ? 'declined.' : 'approved.'}`})
     const requestDataPending = await pendingRequests()
     const requestDataprocessed = await processedRequestBudget()
+    const budgetAllocate = await allocateBudget()
+    const totalCash = await totalCompanyCash()
+    const analytics = await aggregateTransactionsCurrentMonth()
     io.emit('receive_budget_request_pending', requestDataPending)
     io.emit('receive_budget_request_processed', requestDataprocessed)
     io.emit('receive_budget_request_length', requestDataPending.onProcessRequestBudgetCount)
     io.emit('receive_payable_length', requestDataPending.pendingBudgetRequestsCount.totalCount)
-
+    io.emit("receive_budget_allocation", budgetAllocate)
+    io.emit("receive_total_cash", totalCash)
+    io.emit("receive_collection_analytics", analytics)
     }
 
     socket.on("get_budget_reports", getBudgetReports)

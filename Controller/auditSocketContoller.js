@@ -3,6 +3,7 @@ const accounts = require('../Model/accountsModel')
 const invoiceRecords = require('../Model/invoiceRecordsModel')
 const { getToAuditRecords } = require('../Model/invoiceAggregation')
 const { totalCompanyCash } = require('../Model/totalCashAggregation')
+const { aggregateTransactionsCurrentMonth } = require('../Model/collectionAnalyticsAggregation')
 
 
 const bcrypt = require('bcryptjs')
@@ -61,6 +62,9 @@ module.exports = (socket, io) => {
 
         const totalCash = await totalCompanyCash()
         io.emit("receive_total_cash", totalCash)
+
+        const analytics = await aggregateTransactionsCurrentMonth()
+        io.emit("receive_collection_analytics", analytics)
 
     }
 

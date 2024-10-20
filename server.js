@@ -26,6 +26,7 @@ const reviewPaymentTransactionSocket = require("./Controller/reviewPaymentTransa
 const auditSocketController = require("./Controller/auditSocketContoller")
 const budgetProcessingSocket = require("./Controller/budgetProcessingSocketController")
 const viewCollectionSocket = require("./Controller/viewCollectionSocketController")
+const monthlyCollectionJob = require("./CRON JOB/monthlyCollectionJob")
 
 //GET TIME
 function getCurrentDateTime() {
@@ -187,6 +188,7 @@ mongoose.connect(process.env.MONGGO_URI)
         auditSocketController(socket, io)
         budgetProcessingSocket(socket, io)
         viewCollectionSocket(socket, io)
+        monthlyCollectionJob(io)
         
          //User Disconnects
         socket.on("disconnect", () => {

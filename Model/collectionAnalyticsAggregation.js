@@ -2,7 +2,13 @@ const mongoose = require('mongoose');
 const InflowsTransaction = require('../Model/inflowsTransactionModel');
 const OutflowsTransaction = require('../Model/outflowsTransactionModel');
 
-// Function to aggregate inflows and outflows per week for the current month
+// Helper function to determine arrow direction
+const getArrow = (difference) => {
+  if (difference > 0) return '↑'; // Up arrow
+  if (difference < 0) return '↓'; // Down arrow
+  return ''; // No change
+};
+
 const aggregateTransactionsCurrentMonth = async () => {
   try {
     // Get the current date, year, and month
@@ -202,7 +208,7 @@ const aggregateTransactionsCurrentMonth = async () => {
       ? (outflowDifference / totalOutflowsAmountPrevious) * 100 
       : (totalOutflowsAmount > 0 ? 100 : 0);
 
-
+    // Return the results with arrows for differences and percentage changes
     return {
       inflows: inflowsAggregation,
       outflows: outflowsAggregation,
@@ -211,8 +217,12 @@ const aggregateTransactionsCurrentMonth = async () => {
       netIncome: netIncome,
       inflowDifference: inflowDifference,
       inflowPercentageChange: inflowPercentageChange.toFixed(2),
+      inflowDifferenceArrow: getArrow(inflowDifference),
+      inflowPercentageChangeArrow: getArrow(inflowPercentageChange),
       outflowDifference: outflowDifference,
-      outflowPercentageChange: outflowPercentageChange.toFixed(2)
+      outflowPercentageChange: outflowPercentageChange.toFixed(2),
+      outflowDifferenceArrow: getArrow(outflowDifference),
+      outflowPercentageChangeArrow: getArrow(outflowPercentageChange)
     };
 
   } catch (error) {
@@ -221,72 +231,67 @@ const aggregateTransactionsCurrentMonth = async () => {
 };
 
 const transactionRecordsCurrentMonth = async () => {
+  try {
+    // Get the current date, year, and month
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    const currentMonth = currentDate.getMonth() + 1; 
 
-    try {
-        // Get the current date, year, and month
-        const currentDate = new Date();
-        const currentYear = currentDate.getFullYear();
-        const currentMonth = currentDate.getMonth() + 1; 
-    
-        const startOfMonth = new Date(currentYear, currentMonth - 1, 1);
-        const startOfNextMonth = new Date(currentYear, currentMonth, 1);
-    
-        // date format
-        const dateFormat = "%m/%d/%Y %H:%M:%S";
-    
-        // Aggregation for inflows records
-        const inflowsRecords = await InflowsTransaction.aggregate([
-          {
+    const startOfMonth = new Date(currentYear, currentMonth - 1, 1);
+    const startOfNextMonth = new Date(currentYear, currentMonth, 1);
 
-            $addFields: { 
-              date: { 
-                $dateFromString: { 
-                  dateString: "$dateTime", 
-                  format: dateFormat 
-                } 
-              }
-            }
-          },
-          {
-            $match: {
-              date: { $gte: startOfMonth, $lt: startOfNextMonth }
-            }
-          },
-        ]);
-    
-    
-        // Aggregation for outflows records
-        const outflowsRecords = await OutflowsTransaction.aggregate([
-          {
+    // date format
+    const dateFormat = "%m/%d/%Y %H:%M:%S";
 
-            $addFields: { 
-              date: { 
-                $dateFromString: { 
-                  dateString: "$dateTime", 
-                  format: dateFormat
-                } 
-              }
-            }
-          },
-          {
-            $match: {
-              date: { $gte: startOfMonth, $lt: startOfNextMonth }
-            }
-          },
-          
-        ]);
-
-        return {
-            inflowsRecords,
-            outflowsRecords,
+    // Aggregation for inflows records
+    const inflowsRecords = await InflowsTransaction.aggregate([
+      {
+        $addFields: { 
+          date: { 
+            $dateFromString: { 
+              dateString: "$dateTime", 
+              format: dateFormat 
+            } 
+          }
         }
-    
-    }
-    catch(error){
-        console.error('Error in aggregation:', error);
-    }
-}
+      },
+      {
+        $match: {
+          date: { $gte: startOfMonth, $lt: startOfNextMonth }
+        }
+      },
+    ]);
+
+    // Aggregation for outflows records
+    const outflowsRecords = await OutflowsTransaction.aggregate([
+      {
+        $addFields: { 
+          date: { 
+            $dateFromString: { 
+              dateString: "$dateTime", 
+              format: dateFormat
+            } 
+          }
+        }
+      },
+      {
+        $match: {
+          date: { $gte: startOfMonth, $lt: startOfNextMonth }
+        }
+      },
+    ]);
+
+    return {
+      inflowsRecords,
+      outflowsRecords,
+    };
+
+  } catch (error) {
+    console.error('Error in fetching transaction records:', error);
+  }
+};
+
 module.exports = {
-    aggregateTransactionsCurrentMonth,
-    transactionRecordsCurrentMonth
-}
+  aggregateTransactionsCurrentMonth,
+  transactionRecordsCurrentMonth,
+};

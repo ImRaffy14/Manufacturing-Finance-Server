@@ -135,7 +135,7 @@ module.exports = (socket, io) =>{
     }
 
     //RESPONSE TO FINANCE CLIENT
-    socket.emit("receive_budget_request", {msg: `Budget request from ${budgetReqData.department} is ${budgetReqData.status === "Declined" ? 'declined.' : 'approved.'}`})
+    socket.emit("receive_budget_request", {msg: `Budget request from ${budgetReqData.department} is ${budgetReqData.status === "Declined" ? 'declined.' : 'approved.'}`, status: budgetReqData.status, comment: budgetReqData.comment})
     const requestDataPending = await pendingRequests()
     const requestDataprocessed = await processedRequestBudget()
     const budgetAllocate = await allocateBudget()

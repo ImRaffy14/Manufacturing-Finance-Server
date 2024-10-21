@@ -60,14 +60,14 @@ const addBudgetRequestFinance = async(req, res) => {
           fs.unlinkSync(req.file.path);
         }
 
-        const newRequest = new budgetRequestData ({requestId: "00000000", department: "Finance", typeOfRequest, category, reason, totalRequest, documents: documentUrl, status: "Pending", comment: '' })
+        const newRequest = new budgetRequestData ({requestId: "00000000", department: "Finance", typeOfRequest, category, reason, totalRequest, documents: documentUrl, status: "On process", comment: '' })
         const saveRequest = await newRequest.save()
 
         if(saveRequest){
-            res.status(200).json({msg: 'Your Request is on pending'})
+            res.status(200).json({msg: 'Your Request is on process'})
             const requestData = await pendingRequests()
             req.io.emit('receive_budget_request_pending', requestData)
-
+            req.io.emit('receive_budget_request_length', requestData.onProcessRequestBudgetCount)
             req.io.emit('receive_payable_length', requestData.pendingBudgetRequestsCount.totalCount)
         }
     }

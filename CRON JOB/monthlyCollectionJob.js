@@ -23,6 +23,7 @@ module.exports = (io) => {
 
             const newMonthlyRecords = new monthlyCollection({
                 date: getCurrentDateTime(),
+                salesVolume: analytics.salesVolume,
                 totalInflows: analytics.totalInflows,
                 totalOutflows: analytics.totalOutflows,
                 inflowDifference: analytics.inflowDifference,
@@ -42,8 +43,10 @@ module.exports = (io) => {
 
             const savedMonthlyRecords = await newMonthlyRecords.save()
             if(savedMonthlyRecords){
-                const result = await monthlyCollection.find({}).sort({ createdAt: -1})
-                io.emit("receive_collection_records_notif", result)
+                const result1 = await monthlyCollection.find({}).sort({ createdAt: -1})
+                const result2 = await monthlyCollection.find({})
+                io.emit("receive_collection_records_notif", result1)
+                io.emit("receive_dashboard_analytics", result2)
             }
 
         }

@@ -4,6 +4,7 @@ const schema = mongoose.Schema
 
 const monthlyCollectionSchema = new schema({
     date: {type: String, required:true},
+    salesVolume: {type: Number, required: true},
     totalInflows: {type: Number, required: true},
     totalOutflows: {type: Number, required: true},
     inflowDifference: {type: Number, required: true},

@@ -192,6 +192,68 @@ const aggregateTransactionsCurrentMonth = async () => {
       }
     ]);
 
+     // Calculate total inflows sales for the current month
+     const totalInflowSales = await InflowsTransaction.aggregate([
+      {
+        $addFields: { 
+          date: { 
+            $dateFromString: { 
+              dateString: "$dateTime", 
+              format: dateFormat
+            } 
+          }
+        }
+      },
+      {
+        $match: {
+          date: { $gte: startOfMonth, $lt: startOfNextMonth }
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          totalSales: { $sum: 1 }
+        }
+      }
+    ]);
+
+      // Calculate total inflows sales for the previous month
+      const totalInflowSalesPrevious = await InflowsTransaction.aggregate([
+      {
+        $addFields: { 
+          date: { 
+            $dateFromString: { 
+              dateString: "$dateTime", 
+              format: dateFormat
+            } 
+          }
+        }
+      },
+      {
+        $match: {
+          date: { $gte: startOfPreviousMonth, $lt: startOfCurrentMonth }
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          totalSales: { $sum: 1 }
+        }
+      }
+    ]);
+
+    // Prepare the totalSales for the current month
+    const totalSalesVolumeCurrent = totalInflowSales[0]?.totalSales || 0;
+
+    // Prepare the totalSales for the previous month
+    const totalSalesVolumePrevious = totalInflowSalesPrevious[0]?.totalSales || 0;
+
+    // Calculate the difference and percentage change for inflow sales volume
+    const totalSalesVolumeDifference = totalSalesVolumeCurrent - totalSalesVolumePrevious
+    const totalSalesVolumePercentageChange = totalSalesVolumePrevious && totalSalesVolumePrevious !== 0
+    ? (totalSalesVolumeDifference / totalSalesVolumePrevious) * 100
+    : (totalSalesVolumeCurrent > 0 ? 100 : 0)
+
     // Prepare the totals for the previous month
     const totalInflowsAmountPrevious = totalInflowsPreviousMonth[0]?.totalInflowAmount || 0;
     const totalOutflowsAmountPrevious = totalOutflowsPreviousMonth[0]?.totalOutflowAmount || 0;
@@ -222,8 +284,13 @@ const aggregateTransactionsCurrentMonth = async () => {
       outflowDifference: outflowDifference,
       outflowPercentageChange: outflowPercentageChange.toFixed(2),
       outflowDifferenceArrow: getArrow(outflowDifference),
-      outflowPercentageChangeArrow: getArrow(outflowPercentageChange)
-    };
+      outflowPercentageChangeArrow: getArrow(outflowPercentageChange),
+      salesVolume: totalSalesVolumeCurrent,
+      salesVolumeDifference: totalSalesVolumeDifference,
+      salesVolumePercentageChange: totalSalesVolumePercentageChange.toFixed(2),
+      salesVolumeDifferenceArrow: getArrow(totalSalesVolumeDifference),
+      salesVolumePercentageChangeArrow: getArrow(totalSalesVolumePercentageChange)
+    }
 
   } catch (error) {
     console.error('Error in aggregation:', error);

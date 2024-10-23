@@ -60,7 +60,7 @@ const addBudgetRequestFinance = async(req, res) => {
           fs.unlinkSync(req.file.path);
         }
 
-        const newRequest = new budgetRequestData ({requestId: "00000000", department: "Finance", typeOfRequest, category, reason, totalRequest, documents: documentUrl, status: "On process", comment: '' })
+        const newRequest = new budgetRequestData ({requestId: "N/A", department: "Finance", typeOfRequest, category, reason, totalRequest, documents: documentUrl, status: "On process", comment: '' })
         const saveRequest = await newRequest.save()
 
         if(saveRequest){

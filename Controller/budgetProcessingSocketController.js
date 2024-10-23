@@ -9,6 +9,20 @@ const bcrypt = require('bcryptjs')
 
 module.exports = (socket, io) =>{
 
+    //GET TIME
+    function getCurrentDateTime() {
+        const now = new Date();
+        const date = now.toLocaleDateString('en-US'); 
+        const time = now.toLocaleTimeString('en-US', { 
+            hour12: false, 
+            hour: '2-digit', 
+            minute: '2-digit', 
+            second: '2-digit' 
+        });
+    
+        return `${date} ${time}`;
+    }
+
     //GET BUDGET ALLOCATION
     const budgetAllocation = async (data) => {
         const result = await allocateBudget()
@@ -43,19 +57,6 @@ module.exports = (socket, io) =>{
         comment: data.rowData.comment
     }
 
-    //GET TIME
-    function getCurrentDateTime() {
-        const now = new Date();
-        const date = now.toLocaleDateString('en-US'); 
-        const time = now.toLocaleTimeString('en-US', { 
-            hour12: false, 
-            hour: '2-digit', 
-            minute: '2-digit', 
-            second: '2-digit' 
-        });
-    
-        return `${date} ${time}`;
-    }
 
     const user = await accounts.findOne({ userName })
     if(!user){
@@ -148,9 +149,65 @@ module.exports = (socket, io) =>{
     io.emit("receive_budget_allocation", budgetAllocate)
     io.emit("receive_total_cash", totalCash)
     io.emit("receive_collection_analytics", analytics)
+
+    }
+
+
+    //ADD BUDGET RESERVE
+    const addBudgetReserve = async (data) => {
+
+        const userName = data.userName
+        const password = data.password
+
+        const user = await accounts.findOne({ userName })
+        if(!user){
+            return socket.emit('receive_budget_reserve_authUser_invalid', {msg: 'Invalid Credentials'})
+        }
+
+        const isMatch = await bcrypt.compare(password, user.password)
+        if(!isMatch){
+        return socket.emit('receive_budget_reserve_authUser_invalid', {msg: 'Invalid Credentials'})
+        }
+
+        const availableBudget = await allocateBudget()
+
+        if(availableBudget.emergencyReserve < data.totalRequest){
+            return socket.emit("budget_reserve_no_budget", {msg: "No available budget for emergency reserve request."})
+        }
+        
+
+        // SAVING BUDGET RESERVE TO OUTFLOW TRANSACTION
+        const newOutflow = new outflowsTransaction({
+            dateTime: getCurrentDateTime(),
+            approver: userName,
+            approverId: user._id,
+            payableId: "N/A",
+            category: data.category,
+            department: data.department,
+            totalAmount: data.totalRequest
+        })
+
+        const savedOutflow = await newOutflow.save()
+
+        socket.emit("saved_budget_reserved", {msg: "Budget reserved claim successful", amount: savedOutflow?.totalAmount})
+
+        const result = await outflowsTransaction.find({}).sort({ createdAt: -1 })
+        io.emit('receive_budget_reports', result)
+
+        const totalCash = await totalCompanyCash()
+        io.emit("receive_total_cash", totalCash)
+
+        const budgetAllocate = await allocateBudget()
+        const analytics = await aggregateTransactionsCurrentMonth()
+        io.emit("receive_budget_allocation", budgetAllocate)
+        io.emit("receive_total_cash", totalCash)
+        io.emit("receive_collection_analytics", analytics)
+        
+
     }
 
     socket.on("get_budget_reports", getBudgetReports)
     socket.on("get_budget_allocation", budgetAllocation)
     socket.on("budget_request_data", approvedBudgetRequest)
+    socket.on("add_budget_reserve", addBudgetReserve)
 }

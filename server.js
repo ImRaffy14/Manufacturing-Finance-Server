@@ -28,6 +28,7 @@ const budgetProcessingSocket = require("./Controller/budgetProcessingSocketContr
 const viewCollectionSocket = require("./Controller/viewCollectionSocketController")
 const monthlyCollectionJob = require("./CRON JOB/monthlyCollectionJob")
 const dashboardAnalyticsSocket = require("./Controller/dashboardAnalyticSocketController")
+const depositWithdrawSocket = require("./Controller/depositWithdrawSocketController")
 
 
 //GET TIME
@@ -192,6 +193,7 @@ mongoose.connect(process.env.MONGGO_URI)
         viewCollectionSocket(socket, io)
         monthlyCollectionJob(io)
         dashboardAnalyticsSocket(socket, io)
+        depositWithdrawSocket(socket, io)
         
          //User Disconnects
         socket.on("disconnect", () => {

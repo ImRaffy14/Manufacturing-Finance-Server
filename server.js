@@ -69,33 +69,7 @@ app.use((req, res, next) => {
   req.io = io;
   next();
 });
-io.use((socket, next) => {
-  const cookies = socket.handshake.headers.cookie;
 
-  //FOR PARSING COOKIE
-  const cookieObject = {};
-  if (cookies) {
-      cookies.split(';').forEach((cookie) => {
-          const [key, value] = cookie.split('=').map((c) => c.trim());
-          cookieObject[key] = value;
-      });
-  }
-
-  const webSocketToken = cookieObject['webSocketToken'];
-
-  if (!webSocketToken) {
-    return next(new Error('Authentication error: No token provided'));
-  }
-
-  try {
-    // VERIFY COOKIE
-    const decoded = jwt.verify(webSocketToken, process.env.WEBSOCKET_JWT_SECRET);
-    socket.user = decoded;  
-    next(); 
-  } catch (err) {
-    next(new Error('Authentication error: Invalid token'));
-  }
-});
 
 
 

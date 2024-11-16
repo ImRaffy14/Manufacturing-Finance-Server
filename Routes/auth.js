@@ -46,21 +46,15 @@ router.post('/login', async (req, res) => {
         //GENERATES REFRESH TOKEN IF ACCESS TOKEN IS EXPIRED
         const refreshToken = jwt.sign({id: user._id}, process.env.REFRESH_JWT_SECRET,{ expiresIn: '1d'})
 
-        const webSocketToken = jwt.sign({id: user._id}, process.env.WEBSOCKET_JWT_SECRET,{ expiresIn: '1d'})
+
 
         res.cookie('refreshToken', refreshToken, {
             httpOnly: true, 
             secure: true, 
-            sameSite: 'Strict', 
+            sameSite: 'None', 
             maxAge: 24 * 60 * 60 * 1000 // 1 day expiration
         });
 
-        res.cookie('webSocketToken', webSocketToken, {
-            httpOnly: true, 
-            secure: true, 
-            sameSite: 'Strict', 
-            maxAge: 24 * 60 * 60 * 1000 // 1 day expiration
-        });
 
         res.json({token})        
     }
@@ -114,8 +108,7 @@ router.get('/protected', verifyToken, async (req, res) => {
 
 // Log out
 router.post('/logout', (req, res) => {
-    res.clearCookie('refreshToken', { httpOnly: true, secure: true, sameSite: 'Strict' });
-    res.clearCookie('webSocketToken', { httpOnly: true, secure: true, sameSite: 'Strict' });
+    res.clearCookie('refreshToken', { httpOnly: true, secure: true, sameSite: 'None' });
     res.sendStatus(204);
 });
 

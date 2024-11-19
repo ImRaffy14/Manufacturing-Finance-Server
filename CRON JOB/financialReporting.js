@@ -4,7 +4,8 @@ const { totalCompanyCash } = require('../Model/totalCashAggregation')
 const { getPendingSalesData } = require('../Model/invoiceAggregation')
 const { pendingRequests } = require('../Model/budgetRequestAggregation')
 const { aggregateTransactionsCurrentMonth } = require('../Model/collectionAnalyticsAggregation')
-const { rawMaterials } = require('../Model/outflowAggregation')
+const { rawMaterials, laborCost, salariesAndWages, utilities, employeeExpenses } = require('../Model/outflowAggregation')
+
 
 module.exports = (io) => {
     // Schedule the job to run at midnight on the last day of every month
@@ -29,10 +30,29 @@ module.exports = (io) => {
             const totalAssets = totalCompanyCashAmout + pendingSalesData.pendingSalesCount.totalAmount;
             const accountsPayable  = await pendingRequests()
             const totalEquity = totalAssets - accountsPayable.pendingBudgetRequestsCount.totalAmount;
-            const totalLiabilitiesAndEquity = totalAssets + totalEquity;          
+            const totalLiabilitiesAndEquity = totalAssets + totalEquity;
+            
+            //INCOME STATEMENT
             const salesRevenue = await aggregateTransactionsCurrentMonth()
             const COGSrawMaterials = await rawMaterials()
+            const COGSlaborCost = await laborCost()
+            const COGSsalariesAndWages = await salariesAndWages()
+            const COGSutilities = await utilities()
+            const COGSemployeeExpenses = await employeeExpenses()
+            const totalCOGS = COGSrawMaterials + COGSlaborCost;
+            const totalOperatingExpenses = COGSsalariesAndWages + COGSutilities + COGSemployeeExpenses;
+            const grossProfit = salesRevenue.totalInflows - totalCOGS;
+            const netIncome = grossProfit - totalOperatingExpenses;
 
+            //CASH FLOW
+            const totalOutflowsO = salesRevenue.totalInflows + COGSrawMaterials;
+            const totalOutflowsI = COGSlaborCost + COGSutilities;
+            const beginningBalance = totalOutflowsO - totalOutflowsI;
+            const netCashFlow = beginningBalance + salesRevenue.totalInflows;
+            const endingBalance = netCashFlow + beginningBalance;
+
+            
+            //SAVING NEW FINANCIAL
             const newFinancialReport = new financialReportModel({
                 date: getCurrentDateTime(),
 
@@ -51,8 +71,36 @@ module.exports = (io) => {
                 salesRevenue: salesRevenue.totalInflows,
                 totalRevenue: salesRevenue.totalInflows,
                 rawMaterials: COGSrawMaterials,
+                laborCosts: COGSlaborCost,
+                totalCogs: totalCOGS,
+                salariesWages: COGSsalariesAndWages,
+                utilities: COGSutilities,
+                employeeExpenses: COGSemployeeExpenses,
+                totalOperatingExpenses: totalOperatingExpenses,
+                grossProfit: grossProfit,
+                operatingIncome: totalOperatingExpenses,
+                netIncome: netIncome,
+                
+                //CASH FLOW
+                customerPayments: salesRevenue.totalInflows,
+                saleOfOldEquipment: 0,
+                totalInflows: salesRevenue.totalInflows,
+                paymentToSupplier: COGSrawMaterials,
+                salariesAndWages: COGSsalariesAndWages,
+                totalOutflowsO: totalOutflowsO,
+                purchaseOfNewEquipments: COGSlaborCost,
+                utilities: COGSutilities,
+                totalOutflowsI: totalOutflowsI,
+                netCashFlow: netCashFlow,
+                beginningBalance: beginningBalance,
+                endingBalance: endingBalance
             })
-
+            
+            const savedFinancialReport = await newFinancialReport.save()
+            if(savedFinancialReport){
+                const result = await financialReportModel.find({}).sort({ createdAt: -1 })
+                io.emit('receive_financial_report', result)
+            }
         }
         catch(err){
             console.error('Error during analytics aggregation:', err);

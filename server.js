@@ -30,6 +30,7 @@ const monthlyCollectionJob = require("./CRON JOB/monthlyCollectionJob")
 const dashboardAnalyticsSocket = require("./Controller/dashboardAnalyticSocketController")
 const depositWithdrawSocket = require("./Controller/depositWithdrawSocketController")
 const financialReportJob = require("./CRON JOB/financialReporting")
+const financialReportSocket = require("./Controller/financialReportSocketController")
 
 
 //GET TIME
@@ -170,6 +171,7 @@ mongoose.connect(process.env.MONGGO_URI)
         financialReportJob(io)
         dashboardAnalyticsSocket(socket, io)
         depositWithdrawSocket(socket, io)
+        financialReportSocket(socket,io)
         
          //User Disconnects
         socket.on("disconnect", () => {

@@ -7,7 +7,7 @@ const financialReportsSchema = new schema({
     
     //BALANCED SHEET
     //ASSETS
-    cash: { type: Number, required: true },
+    cash: { type: Number, unique: true },
     inventory: { type: Number, required: true },
     accountsReceivable: { type: Number, required: true },
     totalAssets: { type: Number, required: true },
@@ -34,7 +34,7 @@ const financialReportsSchema = new schema({
     //OPERATING EXPENSES
     salariesWages: { type: Number, required: true },
     utilities: { type: Number, required: true },
-    marketingExpenses: { type: Number, required: true },
+    employeeExpenses: { type: Number, required: true },
     totalOperatingExpenses: { type: Number, required: true },
 
     //NET PROFITS

@@ -1,9 +1,15 @@
+require('dotenv').config
+
 const express = require('express');
 const mongoose = require('mongoose')
 const accounts = require('../Model/accountsModel')
 const auditTrails = require('../Model/auditTrailsModel')
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const nodemailer = require('nodemailer')
+const crypto = require('crypto')
+const userOTP = require('../Model/userOTPModel')
+const accountsModel = require('../Model/accountsModel')
 
 const router = express.Router()
 
@@ -17,11 +23,133 @@ function getCurrentDateTime() {
   }
 
 
-//LOGIN ROUTE
-router.post('/login', async (req, res) => {
-    const { userName, password } = req.body
+// MFA MIDDLEWARE
+const firstAttempt = async (req, res, next) => {
+    const { userName, firstLogin } = req.body
+
+    // NODEMAILER CONFIGURATION
+    const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+            user: 'jjmmanufacturing0@gmail.com',
+            pass: process.env.EMAIL_PWD,
+        },
+    });
 
     try{
+        //FIRST ATTEMPT LOGIN AUTHENTICATION
+        if(!firstLogin){
+            
+            // FIND USER'S ACCOUNT
+            const user = await accountsModel.findOne({ userName: userName})
+            const email = user.email
+
+            // GENERATES OTP
+            const generateOTP = () => crypto.randomInt(100000, 999999).toString();
+            const otp = generateOTP()
+
+            //CHECKS IF OTP IS STORED
+            const otpStored = await userOTP.findOne({email: email})
+            if(otpStored){
+                await userOTP.deleteOne({email})
+            }
+
+            await userOTP.create({email, otp})
+
+            // SENDING OTP TO THE USER EMAIL
+            await transporter.sendMail({
+                from: 'jjmmanufacturing0@gmail.com',
+                to: email,
+                subject: 'Your OTP Code',
+                text: `Your OTP code is ${otp}. It will expire in 5 minutes.`
+            })
+            
+            res.status(401).json({msg: 'First Login Attempt.', email: email})
+            return
+        }
+
+        jwt.verify(firstLogin, process.env.F_LOGIN_SECRET, (err) => {
+            if (err) return res.status(403).json({msg: "Something went wrong, please try again."}); // INVALID TOKEN
+
+            next()
+        });
+
+    }
+    catch(err){
+        res.status(500).json({msg: 'Something went wrong.'})
+        console.log(err.message)
+    }
+}
+
+// RESEND OTP
+router.post('/resend-otp', async (req,res) => {
+    const { email } = req.body
+    
+    try{
+        // NODEMAILER CONFIGURATION
+        const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: 'jjmmanufacturing0@gmail.com',
+                pass: process.env.EMAIL_PWD,
+            },
+        });
+
+        // GENERATES OTP
+        const generateOTP = () => crypto.randomInt(100000, 999999).toString();
+        const otp = generateOTP()
+
+        //CHECKS IF OTP IS STORED
+        const otpStored = await userOTP.findOne({email: email})
+        if(otpStored){
+            await userOTP.deleteOne({email})
+        }
+
+        await userOTP.create({email, otp})
+
+        // SENDING OTP TO THE USER EMAIL
+        await transporter.sendMail({
+            from: 'jjmmanufacturing0@gmail.com',
+            to: email,
+            subject: 'Your OTP Code',
+            text: `Your OTP code is ${otp}. It will expire in 5 minutes.`
+        })
+
+        res.status(200).json({msg: 'The OTP is sent to your email.'})
+
+    }
+    catch(error){
+        res.status(500).json({ msg: "Something Went Error", errMsg: error.message})
+    }
+    
+})
+
+// VERIFY OTP
+router.post('/verify-otp', async (req, res) => {
+    const { email, otp } = req.body;
+
+    if (!email || !otp) return res.status(400).json({msg:'Email and OTP are required'});
+
+    // FIND USER OTP
+    const record = await userOTP.findOne({ email: email });
+
+    if (!record) return res.status(400).json({msg:'No OTP found for this email'});
+    if (record.otp !== otp) return res.status(400).json({ msg: 'Invalid OTP'});
+
+    // CLEAR OTP AFTER VERIFICATION
+    await userOTP.deleteOne({ email })
+
+    const token = jwt.sign({email}, process.env.F_LOGIN_SECRET)
+    
+    res.status(200).json({ msg: 'Device Verified', token: token});
+});
+
+//LOGIN ROUTE
+router.post('/login', firstAttempt, async (req, res) => {
+    const { userName, password} = req.body
+
+    try{
+
         const user = await accounts.findOne({ userName })
         if(!user){
             return res.status(400).json({msg: "Invalid Credentials"})

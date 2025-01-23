@@ -7,6 +7,8 @@ const { encryptData } = require("../middleware/encryption")
 const cloudinary = require('../utils/cloudinaryConfig')
 const fs = require("fs");
 const axios = require("axios")
+const jwt = require('jsonwebtoken')
+
 
 //GET ALL BUDGET REQUEST
 const getPendingBudgetRequest = async (req, res) => {
@@ -105,9 +107,15 @@ const updateBudgetRequests = async (req, res) => {
             return res.status(404).json({msg: "Budget request not found"})
         }
 
+        // TOKEN GENERATOR FOR GATEWAY
+        const generateServiceToken = () => {
+            const payload = { service: 'Logistics 1' };
+            return jwt.sign(payload, process.env.GATEWAY_JWT_SECRET, { expiresIn: '1h' });
+        };
+
         //UPDATES ON OTHER SYSTEM
         const updateOsData = {
-            _id: requestId,
+            approvalId: requestId,
             status: status,
             reason: reason,
             comment: comment,
@@ -115,6 +123,20 @@ const updateBudgetRequests = async (req, res) => {
             category: category,
             documents: documents,
             department: department,
+        }
+
+        if(updateOsData.department === "Logistic1"){
+
+            try {
+ 
+                const token = generateServiceToken();
+                const response = await axios.post(`${process.env.API_GATEWAY_URL}/finance/update-budget-status`, updateOsData, {
+                  headers: { Authorization: `Bearer ${token}` },
+                });
+                console.log('Response from Logistic1:', response.data);
+              } catch (error) {
+                console.error('Something went wrong:', error.response?.data || error.message);
+              }
         }
 
 

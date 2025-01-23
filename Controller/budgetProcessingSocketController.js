@@ -1,3 +1,5 @@
+require('dotenv').config()
+
 const accounts = require('../Model/accountsModel')
 const outflowsTransaction = require('../Model/outflowsTransactionModel')
 const budgetRequestData = require("../Model/budgetRequestModel")
@@ -6,6 +8,8 @@ const { allocateBudget } = require("../Model/totalCashAggregation")
 const { totalCompanyCash } = require('../Model/totalCashAggregation')
 const { aggregateTransactionsCurrentMonth } = require('../Model/collectionAnalyticsAggregation')
 const bcrypt = require('bcryptjs')
+const jwt = require('jsonwebtoken')
+const axios = require('axios')
 
 module.exports = (socket, io) =>{
 
@@ -110,6 +114,40 @@ module.exports = (socket, io) =>{
         return socket.emit("budget_notfound", {msg: "Budget request not found."})
     }
 
+    //SENDING BUDGET REQEUST STATUS
+    
+    if(updatedRequest){
+
+        // TOKEN GENERATOR FOR GATEWAY
+        const generateServiceToken = () => {
+            const payload = { service: 'Logistics 1' };
+            return jwt.sign(payload, process.env.GATEWAY_JWT_SECRET, { expiresIn: '1h' });
+        };
+    
+        try {
+            
+            const statusReqData = {
+                approvalId: budgetReqData.requestId,
+                comment: budgetReqData.comment,
+                department: budgetReqData.department,
+                status: budgetReqData.status,
+                totalBudget: budgetReqData.totalRequest,
+                category: budgetReqData.category,
+                reason: budgetReqData.reason,
+                documents: budgetReqData.documents
+            }
+
+            console.log(statusReqData)
+            const token = generateServiceToken();
+            const response = await axios.post(`${process.env.API_GATEWAY_URL}/finance/update-budget-status`, statusReqData, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            console.log('Response from Logistic1:', response.data);
+          } catch (error) {
+            console.error('Something went wrong:', error.response?.data || error.message);
+          }
+    }
+      
     //SAVING TO OUTFLOWS RECORDS
     if(budgetReqData.status === "Approved"){
 

@@ -61,7 +61,72 @@ const firstAttempt = async (req, res, next) => {
                 from: 'jjmmanufacturing0@gmail.com',
                 to: email,
                 subject: 'Your OTP Code',
-                text: `Your OTP code is ${otp}. It will expire in 5 minutes.`
+                html: `
+                <html>
+                  <head>
+                    <style>
+                      body {
+                        font-family: Arial, sans-serif;
+                        background-color: #ffffff;
+                        color: #333;
+                        margin: 0;
+                        padding: 0;
+                      }
+                      .container {
+                        background-color: #4CAF50;
+                        color: white;
+                        padding: 30px;
+                        text-align: center;
+                        border-radius: 8px;
+                        width: 100%;
+                        max-width: 600px;
+                        margin: 0 auto;
+                      }
+                      .logo {
+                        width: 150px;
+                        margin-bottom: 20px;
+                      }            
+                      .header {
+                        font-size: 24px;
+                        font-weight: bold;
+                        margin-bottom: 20px;
+                      }
+                      .otp {
+                        font-size: 28px;
+                        font-weight: bold;
+                        color: #ffffff;
+                        background-color: #333333;
+                        padding: 10px 20px;
+                        border-radius: 5px;
+                        display: inline-block;
+                      }
+                      .footer {
+                        font-size: 14px;
+                        margin-top: 20px;
+                        color: #e5e5e5;
+                      }
+                      .footer a {
+                        color: #e5e5e5;
+                        text-decoration: none;
+                      }
+                    </style>
+                  </head>
+                  <body>
+                    <div class="container">
+                    <img src="https://res.cloudinary.com/dpyhkumle/image/upload/v1737684672/423249788_854054440064776_370969774868051925_n_d75cbi.jpg" alt="JJM MANUFACTURING Logo" class="logo" />
+                      <div class="header">JJM MANUFACTURING</div>
+                      <p>Dear ${userName},</p>
+                      <p>Here is your One-Time Password (OTP) for authentication:</p>
+                      <div class="otp">${otp}</div>
+                      <p>Use this OTP to proceed with your request. The OTP is valid for the next 5 minutes.</p>
+                      <div class="footer">
+                        <p>If you did not request this OTP, please ignore this email.</p>
+                        <p>Thank you, <br/> JJM MANUFACTURING Dev Team</p>
+                      </div>
+                    </div>
+                  </body>
+                </html>
+              `
             })
             
             res.status(401).json({msg: 'First Login Attempt.', email: email})
@@ -88,7 +153,7 @@ router.post('/resend-otp', async (req,res) => {
     try{
         // NODEMAILER CONFIGURATION
         const transporter = nodemailer.createTransport({
-            service: 'gmail',
+             service: 'gmail',
             auth: {
                 user: 'jjmmanufacturing0@gmail.com',
                 pass: process.env.EMAIL_PWD,
@@ -112,7 +177,72 @@ router.post('/resend-otp', async (req,res) => {
             from: 'jjmmanufacturing0@gmail.com',
             to: email,
             subject: 'Your OTP Code',
-            text: `Your OTP code is ${otp}. It will expire in 5 minutes.`
+            html: `
+            <html>
+              <head>
+                <style>
+                  body {
+                    font-family: Arial, sans-serif;
+                    background-color: #ffffff;
+                    color: #333;
+                    margin: 0;
+                    padding: 0;
+                  }
+                  .container {
+                    background-color: #4CAF50;
+                    color: white;
+                    padding: 30px;
+                    text-align: center;
+                    border-radius: 8px;
+                    width: 100%;
+                    max-width: 600px;
+                    margin: 0 auto;
+                  }
+                  .logo {
+                    width: 150px;
+                    margin-bottom: 20px;
+                  }            
+                  .header {
+                    font-size: 24px;
+                    font-weight: bold;
+                    margin-bottom: 20px;
+                  }
+                  .otp {
+                    font-size: 28px;
+                    font-weight: bold;
+                    color: #ffffff;
+                    background-color: #333333;
+                    padding: 10px 20px;
+                    border-radius: 5px;
+                    display: inline-block;
+                  }
+                  .footer {
+                    font-size: 14px;
+                    margin-top: 20px;
+                    color: #e5e5e5;
+                  }
+                  .footer a {
+                    color: #e5e5e5;
+                    text-decoration: none;
+                  }
+                </style>
+              </head>
+              <body>
+                <div class="container">
+                <img src="https://res.cloudinary.com/dpyhkumle/image/upload/v1737684672/423249788_854054440064776_370969774868051925_n_d75cbi.jpg" alt="JJM MANUFACTURING Logo" class="logo" />
+                  <div class="header">JJM MANUFACTURING</div>
+                  <p>Dear ${email},</p>
+                  <p>Here is your One-Time Password (OTP) for authentication:</p>
+                  <div class="otp">${otp}</div>
+                  <p>Use this OTP to proceed with your request. The OTP is valid for the next 5 minutes.</p>
+                  <div class="footer">
+                    <p>If you did not request this OTP, please ignore this email.</p>
+                    <p>Thank you, <br/> JJM MANUFACTURING Dev Team</p>
+                  </div>
+                </div>
+              </body>
+            </html>
+          `
         })
 
         res.status(200).json({msg: 'The OTP is sent to your email.'})
@@ -120,6 +250,7 @@ router.post('/resend-otp', async (req,res) => {
     }
     catch(error){
         res.status(500).json({ msg: "Something Went Error", errMsg: error.message})
+        console.log(error.message)
     }
     
 })

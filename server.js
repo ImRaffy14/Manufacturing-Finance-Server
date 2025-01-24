@@ -31,6 +31,7 @@ const dashboardAnalyticsSocket = require("./Controller/dashboardAnalyticSocketCo
 const depositWithdrawSocket = require("./Controller/depositWithdrawSocketController")
 const financialReportJob = require("./CRON JOB/financialReporting")
 const financialReportSocket = require("./Controller/financialReportSocketController")
+const recaptchaRoute = require("./Routes/recaptcha")
 
 
 //GET TIME
@@ -130,6 +131,7 @@ app.use(process.env.API_ACCOUNT, accountRoutes)
 app.use(process.env.API_AUTH, authRoutes)
 app.use(process.env.API_TRAILS, auditTrailRoute)
 app.use(process.env.API_REQUEST_BUDGET, budgetRequestRoute)
+app.use(process.env.API_RECAPTCHA, recaptchaRoute)
 
 
 

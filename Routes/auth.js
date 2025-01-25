@@ -10,6 +10,8 @@ const nodemailer = require('nodemailer')
 const crypto = require('crypto')
 const userOTP = require('../Model/userOTPModel')
 const accountsModel = require('../Model/accountsModel')
+const failedAttemptLogs = require('../Model/failedAttemptsModel')
+const blacklistedIp = require('../Model/blacklistedIpModel')
 
 const router = express.Router()
 
@@ -23,9 +25,10 @@ function getCurrentDateTime() {
   }
 
 
+
 // MFA MIDDLEWARE
 const firstAttempt = async (req, res, next) => {
-    const { userName, firstLogin } = req.body
+    const { userName, firstLogin, password } = req.body
 
     // NODEMAILER CONFIGURATION
     const transporter = nodemailer.createTransport({
@@ -36,12 +39,197 @@ const firstAttempt = async (req, res, next) => {
         },
     });
 
+    const ip = 
+        req.headers['cf-connecting-ip'] ||  
+        req.headers['x-real-ip'] ||
+        req.headers['x-forwarded-for'] ||
+        req.socket.remoteAddress || '';
+
     try{
         //FIRST ATTEMPT LOGIN AUTHENTICATION
         if(!firstLogin){
             
+            
+            //CHECK IF THE IP IS ON BLACKLISTS
+            const checkIp = await blacklistedIp.findOne({ ipAddress: ip})
+            if(checkIp){
+                if(checkIp.banned === true){
+                    res.status(403).json({msg: 'Your IP has been blacklisted due to multiple failed login attempts. Please contact your administrator or supervisor to resolve this issue.'})
+                    return
+                }
+
+                // CHECK IF THE IP IS STILL ON BLACKLISTS
+                const currentTime = Date.now();
+                const banExpirationTime = checkIp.banTime + checkIp.banDuration;
+                if (currentTime > banExpirationTime) {
+                    await blacklistedIp.deleteOne({ ipAddress: ip });
+                    res.status(200).json({ success: true, msg: 'Your IP is no longer blacklisted. You can try logging in again.'}) 
+                    return 
+                }
+                res.status(403).json({msg: "Your IP has been blacklisted due to excessive login attempts.", banTime: checkIp.banTime, banDuration: checkIp.banDuration})
+                return
+            }
+
+
             // FIND USER'S ACCOUNT
             const user = await accountsModel.findOne({ userName: userName})
+
+            if(!user){
+                const attemptLog = await failedAttemptLogs.findOne({ ipAddress: ip })
+
+
+                // LOG THE IP ADDRESS FAILED ATTEMPT
+                if(!attemptLog){
+                    await failedAttemptLogs.create({ userId: 'Unknown ID', username: 'Unknown User', ipAddress: ip, attempts: 1})
+
+                    res.status(400).json({msg: "Invalid Credentials"})
+                    return 
+                }
+
+                const attempts = attemptLog.attempts
+
+                //CHECKS IF THE ATTEMPTS IS ABOVE 2
+                if(attempts == 3){
+                     const result = await blacklistedIp.create({
+                        userId: 'Unknown ID',
+                        username: 'Unknown User',
+                        ipAddress: ip,
+                        banTime: Date.now(),
+                        banDuration: 120000
+                    })
+
+                    await failedAttemptLogs.findOneAndUpdate(
+                        { ipAddress: ip},
+                        { attempts: attempts + 1 , attemptDate: Date.now()},
+                    )
+
+                    res.status(403).json({msg: "Your IP has been blacklisted due to excessive login attempts.", banTime: result.banTime, banDuration: result.banDuration})
+                    return 
+                }
+
+                if(attempts == 5){
+                    const result = await blacklistedIp.create({
+                        userId: 'Unknown ID',
+                        username: 'Unknown User',
+                        ipAddress: ip,
+                        banTime: Date.now(),
+                       banDuration: 300000
+                   })
+
+                   await failedAttemptLogs.findOneAndUpdate(
+                       { ipAddress: ip},
+                       { attempts: attempts + 1 , attemptDate: Date.now()},
+                   )
+
+                   res.status(403).json({msg: "Your IP has been blacklisted due to excessive login attempts.", banTime: result.banTime, banDuration: result.banDuration})
+                   return 
+               }
+
+                if(attempts == 7){
+                    const result = await blacklistedIp.create({
+                    userId: 'Unknown ID',
+                    username: 'Unknown User',
+                    ipAddress: ip,
+                    banTime: 0,
+                    banDuration: 0,
+                    banned: true
+                })
+
+                    res.status(403).json({msg: "Your IP has been blacklisted due to multiple failed login attempts. Please contact your administrator or supervisor to resolve this issue.", banTime: result.banTime, banDuration: result.banDuration})
+                    return 
+                }
+
+                await failedAttemptLogs.findOneAndUpdate(
+                    { ipAddress: ip},
+                    { attempts: attempts + 1 , attemptDate: Date.now()},
+                )
+
+                res.status(400).json({msg: "Invalid Credentials"})
+                return 
+            }
+
+            
+            // CHECK IF THE PASSWORD IS MATCH
+            const isMatch = await bcrypt.compare(password, user.password)
+            if(!isMatch){
+
+                const attemptLog = await failedAttemptLogs.findOne({ ipAddress: ip })
+                
+                // GETS USER CREDENTIAL
+                const username = user.userName;
+                const userId = user._id
+
+                // LOG THE IP ADDRESS FAILED ATTEMPT
+                if(!attemptLog){
+                    await failedAttemptLogs.create({ userId: userId, username: username, ipAddress: ip, attempts: 1})
+
+                    res.status(400).json({msg: "Invalid Credentials"})
+                    return 
+                }
+
+                const attempts = attemptLog.attempts
+
+                //CHECKS IF THE ATTEMPTS IS ABOVE 2
+                if(attempts == 3){
+                     const result = await blacklistedIp.create({
+                        userId: userId,
+                        username: username,
+                        ipAddress: ip,
+                        banTime: Date.now(),
+                        banDuration: 120000
+                    })
+
+                    await failedAttemptLogs.findOneAndUpdate(
+                        { ipAddress: ip},
+                        { attempts: attempts + 1 , attemptDate: Date.now()},
+                    )
+
+                    res.status(403).json({msg: "Your IP has been blacklisted due to excessive login attempts.", banTime: result.banTime, banDuration: result.banDuration})
+                    return 
+                }
+
+                if(attempts == 5){
+                    const result = await blacklistedIp.create({
+                        userId: userId,
+                        username: username,
+                        ipAddress: ip,
+                        banTime: Date.now(),
+                       banDuration: 300000
+                   })
+
+                   await failedAttemptLogs.findOneAndUpdate(
+                       { ipAddress: ip},
+                       { attempts: attempts + 1 , attemptDate: Date.now()},
+                   )
+
+                   res.status(403).json({msg: "Your IP has been blacklisted due to excessive login attempts.", banTime: result.banTime, banDuration: result.banDuration})
+                   return 
+               }
+
+                if(attempts == 7){
+                    const result = await blacklistedIp.create({
+                    userId: userId,
+                    username: username,
+                    ipAddress: ip,
+                    banTime: 0,
+                    banDuration: 0,
+                    banned: true
+                })
+
+                    res.status(403).json({msg: "Your IP has been blacklisted due to multiple failed login attempts. Please contact your administrator or supervisor to resolve this issue.", banTime: result.banTime, banDuration: result.banDuration})
+                    return 
+                }
+
+                await failedAttemptLogs.findOneAndUpdate(
+                    { ipAddress: ip},
+                    { attempts: attempts + 1 , attemptDate: Date.now()},
+                )
+
+                res.status(400).json({msg: "Invalid Credentials"})
+                return 
+            }
+
+            // GETS USER EMAIL
             const email = user.email
 
             // GENERATES OTP
@@ -134,7 +322,7 @@ const firstAttempt = async (req, res, next) => {
         }
 
         jwt.verify(firstLogin, process.env.F_LOGIN_SECRET, (err) => {
-            if (err) return res.status(403).json({msg: "Something went wrong, please try again."}); // INVALID TOKEN
+            if (err) return res.status(412).json({msg: "Something went wrong, please try again."}); // INVALID TOKEN
 
             next()
         });
@@ -279,18 +467,178 @@ router.post('/verify-otp', async (req, res) => {
 router.post('/login', firstAttempt, async (req, res) => {
     const { userName, password} = req.body
 
+    // GET USER'S IP ADDRESS
+    const ip = 
+    req.headers['cf-connecting-ip'] ||  
+    req.headers['x-real-ip'] ||
+    req.headers['x-forwarded-for'] ||
+    req.socket.remoteAddress || '';
+
     try{
 
         const user = await accounts.findOne({ userName })
         if(!user){
-            return res.status(400).json({msg: "Invalid Credentials"})
+            const attemptLog = await failedAttemptLogs.findOne({ ipAddress: ip })
+
+
+            // LOG THE IP ADDRESS FAILED ATTEMPT
+            if(!attemptLog){
+                await failedAttemptLogs.create({ userId: 'Unknown ID', username: 'Unknown User', ipAddress: ip, attempts: 1})
+
+                res.status(400).json({msg: "Invalid Credentials"})
+                return 
+            }
+
+            const attempts = attemptLog.attempts
+
+            //CHECKS IF THE ATTEMPTS IS ABOVE 2
+            if(attempts == 3){
+                 const result = await blacklistedIp.create({
+                    userId: 'Unknown ID',
+                    username: 'Unknown User',
+                    ipAddress: ip,
+                    banTime: Date.now(),
+                    banDuration: 120000
+                })
+
+                await failedAttemptLogs.findOneAndUpdate(
+                    { ipAddress: ip},
+                    { attempts: attempts + 1 , attemptDate: Date.now()},
+                )
+
+                res.status(403).json({msg: "Your IP has been blacklisted due to excessive login attempts.", banTime: result.banTime, banDuration: result.banDuration})
+                return 
+            }
+
+            if(attempts == 5){
+                const result = await blacklistedIp.create({
+                    userId: 'Unknown ID',
+                    username: 'Unknown User',
+                    ipAddress: ip,
+                    banTime: Date.now(),
+                   banDuration: 300000
+               })
+
+               await failedAttemptLogs.findOneAndUpdate(
+                   { ipAddress: ip},
+                   { attempts: attempts + 1 , attemptDate: Date.now()},
+               )
+
+               res.status(403).json({msg: "Your IP has been blacklisted due to excessive login attempts.", banTime: result.banTime, banDuration: result.banDuration})
+               return 
+           }
+
+            if(attempts == 7){
+                const result = await blacklistedIp.create({
+                userId: 'Unknown ID',
+                username: 'Unknown User',
+                ipAddress: ip,
+                banTime: 0,
+                banDuration: 0,
+                banned: true
+            })
+
+                res.status(403).json({msg: "Your IP has been blacklisted due to multiple failed login attempts. Please contact your administrator or supervisor to resolve this issue.", banTime: result.banTime, banDuration: result.banDuration})
+                return 
+            }
+
+            await failedAttemptLogs.findOneAndUpdate(
+                { ipAddress: ip},
+                { attempts: attempts + 1 , attemptDate: Date.now()},
+            )
+
+            res.status(400).json({msg: "Invalid Credentials"})
+            return 
         }
 
+        
+        // CHECK IF THE PASSWORD IS MATCH
         const isMatch = await bcrypt.compare(password, user.password)
         if(!isMatch){
-            return res.status(400).json({msg: "Invalid Credentials"})
+
+            const attemptLog = await failedAttemptLogs.findOne({ ipAddress: ip })
+            
+            // GETS USER CREDENTIAL
+            const username = user.userName;
+            const userId = user._id
+
+            // LOG THE IP ADDRESS FAILED ATTEMPT
+            if(!attemptLog){
+                await failedAttemptLogs.create({ userId: userId, username: username, ipAddress: ip, attempts: 1})
+
+                res.status(400).json({msg: "Invalid Credentials"})
+                return 
+            }
+
+            const attempts = attemptLog.attempts
+
+            //CHECKS IF THE ATTEMPTS IS ABOVE 2
+            if(attempts == 3){
+                 const result = await blacklistedIp.create({
+                    userId: userId,
+                    username: username,
+                    ipAddress: ip,
+                    banTime: Date.now(),
+                    banDuration: 120000
+                })
+
+                await failedAttemptLogs.findOneAndUpdate(
+                    { ipAddress: ip},
+                    { attempts: attempts + 1 , attemptDate: Date.now()},
+                )
+
+                res.status(403).json({msg: "Your IP has been blacklisted due to excessive login attempts.", banTime: result.banTime, banDuration: result.banDuration})
+                return 
+            }
+
+            if(attempts == 5){
+                const result = await blacklistedIp.create({
+                    userId: userId,
+                    username: username,
+                    ipAddress: ip,
+                    banTime: Date.now(),
+                   banDuration: 300000
+               })
+
+               await failedAttemptLogs.findOneAndUpdate(
+                   { ipAddress: ip},
+                   { attempts: attempts + 1 , attemptDate: Date.now()},
+               )
+
+               res.status(403).json({msg: "Your IP has been blacklisted due to excessive login attempts.", banTime: result.banTime, banDuration: result.banDuration})
+               return 
+           }
+
+            if(attempts == 7){
+                const result = await blacklistedIp.create({
+                userId: userId,
+                username: username,
+                ipAddress: ip,
+                banTime: 0,
+                banDuration: 0,
+                banned: true
+            })
+
+                res.status(403).json({msg: "Your IP has been blacklisted due to multiple failed login attempts. Please contact your administrator or supervisor to resolve this issue.", banTime: result.banTime, banDuration: result.banDuration})
+                return 
+            }
+
+            await failedAttemptLogs.findOneAndUpdate(
+                { ipAddress: ip},
+                { attempts: attempts + 1 , attemptDate: Date.now()},
+            )
+
+            res.status(400).json({msg: "Invalid Credentials"})
+            return 
         }
         
+
+        //CHECK THE IP IF STILL ON FAILED ATTEMPTS RECORDS
+        const blacklisted = await failedAttemptLogs.findOne({ ipAddress: ip })
+        if(blacklisted){
+            await failedAttemptLogs.findOneAndDelete( { ipAddress: ip } )
+        }
+
         //SAVING THE LOGIN INFO TO AUDIT TRAILS
         const newTrail = new auditTrails ({dateTime: getCurrentDateTime(), userId: user._id, userName,  role: user.role, action: "LOGIN", description: "Logged in to the system."})
         const savedTrails = await newTrail.save()

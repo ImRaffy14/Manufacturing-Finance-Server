@@ -476,6 +476,26 @@ router.post('/login', firstAttempt, async (req, res) => {
 
     try{
 
+         //CHECK IF THE IP IS ON BLACKLISTS
+         const checkIp = await blacklistedIp.findOne({ ipAddress: ip})
+         if(checkIp){
+             if(checkIp.banned === true){
+                 res.status(403).json({msg: 'Your IP has been blacklisted due to multiple failed login attempts. Please contact your administrator or supervisor to resolve this issue.'})
+                 return
+             }
+
+             // CHECK IF THE IP IS STILL ON BLACKLISTS
+             const currentTime = Date.now();
+             const banExpirationTime = checkIp.banTime + checkIp.banDuration;
+             if (currentTime > banExpirationTime) {
+                 await blacklistedIp.deleteOne({ ipAddress: ip });
+                 res.status(200).json({ success: true, msg: 'Your IP is no longer blacklisted. You can try logging in again.'}) 
+                 return 
+             }
+             res.status(403).json({msg: "Your IP has been blacklisted due to excessive login attempts.", banTime: checkIp.banTime, banDuration: checkIp.banDuration})
+             return
+         }
+
         const user = await accounts.findOne({ userName })
         if(!user){
             const attemptLog = await failedAttemptLogs.findOne({ ipAddress: ip })

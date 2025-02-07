@@ -128,7 +128,6 @@ const updateBudgetRequests = async (req, res) => {
         if(updateOsData.department === "Logistic1"){
 
             try {
- 
                 const token = generateServiceToken();
                 const response = await axios.post(`${process.env.API_GATEWAY_URL}/finance/update-budget-status`, updateOsData, {
                   headers: { Authorization: `Bearer ${token}` },

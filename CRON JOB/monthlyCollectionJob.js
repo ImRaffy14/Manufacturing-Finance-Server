@@ -8,6 +8,7 @@ module.exports = (io) => {
         const now = new Date();
         const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
 
+        console.log('CRON job triggered for Monthly Record')
         //GET DATE
         function getCurrentDateTime() {
             const now = new Date();
@@ -40,6 +41,12 @@ module.exports = (io) => {
                 inflowRecords: records.inflowsRecords,
                 outflowRecords: records.outflowsRecords
             })
+
+            // CHECK IF DATA IS ALREADY RECORDED
+            const isRecorded = await monthlyCollection.findOne({ date: getCurrentDateTime() })
+            if( isRecorded ){
+                return
+            }
 
             const savedMonthlyRecords = await newMonthlyRecords.save()
             if(savedMonthlyRecords){

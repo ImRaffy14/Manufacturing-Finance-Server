@@ -13,6 +13,8 @@ module.exports = (io) => {
         const now = new Date();
         const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
 
+        console.log('CRON job triggered for Financial Report')
+
         //GET DATE
         function getCurrentDateTime() {
             const now = new Date();

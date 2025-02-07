@@ -33,6 +33,11 @@ const financialReportJob = require("./CRON JOB/financialReporting")
 const financialReportSocket = require("./Controller/financialReportSocketController")
 const recaptchaRoute = require("./Routes/recaptcha")
 
+//FOR TESTING
+const { oRunAnomalyDetection } = require('./Controller/Anomaly-Detection/machine-learning/outflowAutoencoder')
+const { iRunAnomalyDetection } = require('./Controller/Anomaly-Detection/machine-learning/inflowAutoencoder')
+const { purchaseOrderDuplication, inflowDuplication, outflowDuplication } = require('./Controller/Anomaly-Detection/rule-based/detectDuplication')
+
 
 //GET TIME
 function getCurrentDateTime() {
@@ -133,6 +138,29 @@ app.use(process.env.API_TRAILS, auditTrailRoute)
 app.use(process.env.API_REQUEST_BUDGET, budgetRequestRoute)
 app.use(process.env.API_RECAPTCHA, recaptchaRoute)
 
+// FOR TESTING
+app.get('/detect-anomalies', async (req, res) => {
+
+
+  // Run anomaly detection
+  const anomalies = await oRunAnomalyDetection();
+  
+  // Respond with the anomalies detected
+  res.json({ success: true, anomalies });
+});
+
+app.get('/detect-anomalies-inflow', async (req, res) => {
+
+  const anomalies = await iRunAnomalyDetection()
+
+  res.json({ success: true, anomalies})
+})
+
+app.get('/detect-duplication', async (req, res) => {
+  const duplication = await outflowDuplication()
+
+  res.json({success: true, duplication})
+})
 
 
 //DB connection

@@ -19,7 +19,6 @@ module.exports = (socket, io) => {
         })
 
         await newAS.save()
-        console.log('new record saved')
           } catch (err) {
             if (err.code === 11000) {
               console.log('Duplicate IP address error');
@@ -30,8 +29,6 @@ module.exports = (socket, io) => {
     }
 
     const staffDisconnect = async (data) => {
-        const result = await activeStaffRecords.findOneAndDelete({ userId: data})
-        console.log(result)
     }
 
     socket.on('save_active_staff', saveActiveStaff)

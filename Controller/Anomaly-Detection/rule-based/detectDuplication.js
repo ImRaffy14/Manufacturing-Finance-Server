@@ -2,6 +2,7 @@ const invoiceRecords = require('../../../Model/invoiceRecordsModel')
 const inflowTransactionRecord = require('../../../Model/inflowsTransactionModel')
 const outflowTransactionRecord = require('../../../Model/outflowsTransactionModel')
 const budgetRequestRecords = require('../../../Model/budgetRequestModel')
+const activeStaffRecords = require('../../../Model/activeStaffModel')
 
 
 // PURCHASE ORDER
@@ -76,9 +77,28 @@ const budgetRequestDuplication = async () => {
     return duplicates
 }
 
+//SUSPICIOUS LOGIN
+const suspiciousLogin = async () => {
+    const result = await activeStaffRecords.aggregate([
+        {
+            $group: {
+                _id: { userId: "$userId", username: "$username", role: "$role" },
+                count: { $sum: 1 },
+                ipAddress: { $push: "$ipAddress" }
+            }  
+        },
+        {
+            $match: { $count: { $gt: 1 } }
+        }
+    ])
+
+    return result;
+}
+
 module.exports = {
     purchaseOrderDuplication,
     inflowDuplication,
     outflowDuplication,
-    budgetRequestDuplication
+    budgetRequestDuplication,
+    suspiciousLogin
 }

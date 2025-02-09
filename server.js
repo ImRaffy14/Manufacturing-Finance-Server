@@ -32,6 +32,7 @@ const depositWithdrawSocket = require("./Controller/depositWithdrawSocketControl
 const financialReportJob = require("./CRON JOB/financialReporting")
 const financialReportSocket = require("./Controller/financialReportSocketController")
 const recaptchaRoute = require("./Routes/recaptcha")
+const activeStaffSocket = require("./Controller/activeStaffSocket")
 
 //FOR TESTING
 const { oRunAnomalyDetection } = require('./Controller/Anomaly-Detection/machine-learning/outflowAutoencoder')
@@ -224,6 +225,7 @@ mongoose.connect(process.env.MONGGO_URI)
         dashboardAnalyticsSocket(socket, io)
         depositWithdrawSocket(socket, io)
         financialReportSocket(socket,io)
+        activeStaffSocket(socket, io)
         
          //User Disconnects
         socket.on("disconnect", () => {

@@ -63,6 +63,9 @@ const financialReportsSchema = new schema({
     beginningBalance: { type: Number, required: true },
     endingBalance: { type: Number, required: true },
 
+    //NARRATIVE REPORT FROM AI
+    narrativeReport: { type: String }
+
 }, { timestamps: true})
 
 module.exports = mongoose.model('financialReport', financialReportsSchema)

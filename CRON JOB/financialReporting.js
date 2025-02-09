@@ -5,6 +5,8 @@ const { getPendingSalesData } = require('../Model/invoiceAggregation')
 const { pendingRequests } = require('../Model/budgetRequestAggregation')
 const { aggregateTransactionsCurrentMonth } = require('../Model/collectionAnalyticsAggregation')
 const { rawMaterials, laborCost, salariesAndWages, utilities, employeeExpenses } = require('../Model/outflowAggregation')
+const { generateReport } = require('../Controller/Anomaly-Detection/machine-learning/generateReport')
+const financialReportRecord = require('../Model/financialReportsModel')
 
 
 module.exports = (io) => {
@@ -12,8 +14,8 @@ module.exports = (io) => {
     cron.schedule('59 23 28-31 * *', async () => {
         const now = new Date();
         const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-
         console.log('CRON job triggered for Financial Report')
+
 
         //GET DATE
         function getCurrentDateTime() {
@@ -46,12 +48,53 @@ module.exports = (io) => {
             const grossProfit = salesRevenue.totalInflows - totalCOGS;
             const netIncome = grossProfit - totalOperatingExpenses;
 
+
             //CASH FLOW
             const totalOutflowsO = salesRevenue.totalInflows + COGSrawMaterials;
             const totalOutflowsI = COGSlaborCost + COGSutilities;
             const beginningBalance = totalOutflowsO - totalOutflowsI;
             const netCashFlow = beginningBalance + salesRevenue.totalInflows;
             const endingBalance = netCashFlow + beginningBalance;
+
+            //NARRATIVE REPORT
+            //GET LAST MONTH DATE
+            function getLastMonthDate(dateString) {
+                let today = new Date(dateString);
+                today.setMonth(today.getMonth() - 1);
+
+                if (today.getDate() !== new Date(dateString).getDate()) {
+                    today.setDate(0);
+                }
+            
+                let formattedDate = `${today.getMonth() + 1}/${today.getDate()}/${today.getFullYear()}`;
+                return formattedDate;
+            }
+
+            //NARRATIVE REPORT
+            const checkLastFinancialReport = async () => {
+                const result = await financialReportRecord.findOne({ date: getLastMonthDate(getCurrentDateTime()) })
+                    if(!result){
+                        return 0
+                    }
+                    return result
+            }
+
+            const lastFinancialReport = await checkLastFinancialReport()
+
+            const narrativeReport = await generateReport({
+                date: getCurrentDateTime(), 
+                salesRevenue: salesRevenue.totalInflows,
+                grossProfit: grossProfit,
+                totalCogs: totalCOGS,
+                totalOperatingExpenses: totalOperatingExpenses,
+                netCashFlow: netCashFlow,
+                lmDate: lastFinancialReport.date,
+                lmSalesRevenue: lastFinancialReport.salesRevenue,
+                lmGrossProfit: lastFinancialReport.grossProfit,
+                lmTotalCogs: lastFinancialReport.totalCogs,
+                lmTotalOperatingExpenses: lastFinancialReport.totalOperatingExpenses,
+                lmNetCashFlow: lastFinancialReport.netCashFlow
+            })
 
             
             //SAVING NEW FINANCIAL
@@ -95,7 +138,10 @@ module.exports = (io) => {
                 totalOutflowsI: totalOutflowsI,
                 netCashFlow: netCashFlow,
                 beginningBalance: beginningBalance,
-                endingBalance: endingBalance
+                endingBalance: endingBalance,
+
+                //NARRATIVE REPORT FROM AI
+                narrativeReport: narrativeReport
             })
             
             const savedFinancialReport = await newFinancialReport.save()

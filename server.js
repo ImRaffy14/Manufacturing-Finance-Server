@@ -36,7 +36,8 @@ const recaptchaRoute = require("./Routes/recaptcha")
 //FOR TESTING
 const { oRunAnomalyDetection } = require('./Controller/Anomaly-Detection/machine-learning/outflowAutoencoder')
 const { iRunAnomalyDetection } = require('./Controller/Anomaly-Detection/machine-learning/inflowAutoencoder')
-const { purchaseOrderDuplication, inflowDuplication, outflowDuplication } = require('./Controller/Anomaly-Detection/rule-based/detectDuplication')
+const { purchaseOrderDuplication, inflowDuplication, outflowDuplication, budgetRequestDuplication } = require('./Controller/Anomaly-Detection/rule-based/detectDuplication')
+const { generateReport } = require('./Controller/Anomaly-Detection/machine-learning/generateReport')
 
 
 //GET TIME
@@ -157,10 +158,31 @@ app.get('/detect-anomalies-inflow', async (req, res) => {
 })
 
 app.get('/detect-duplication', async (req, res) => {
-  const duplication = await outflowDuplication()
+  const duplication = await budgetRequestDuplication()
 
   res.json({success: true, duplication})
 })
+
+app.post('/generate-report', async (req, res) => {
+  const { bobo } = req.body
+  console.log(bobo)
+  const result = await generateReport({
+    date: '1/10/2025', 
+    salesRevenue: 1,
+    grossProfit: 1,
+    totalCogs: 2,
+    totalOperatingExpenses: 1,
+    netCashFlow: 2,
+    lmDate: "12/10/2024",
+    lmSalesRevenue: 3,
+    lmGrossProfit: 5,
+    lmTotalCogs: 3,
+    lmTotalOperatingExpenses: 2,
+    lmNetCashFlow: 1
+  })
+  res.json({success: true, result})
+})
+
 
 
 //DB connection
@@ -186,7 +208,7 @@ mongoose.connect(process.env.MONGGO_URI)
 
       io.on("connection", (socket) => {
         //User Connects
-        console.log(`[${getCurrentDateTime()}] User is Connected ${socket.id}`)
+        console.log(`[${getCurrentDateTime()}] Client is Connected ${socket.id}`)
         
         testingSocketController(socket, io)
         auditTrailSocket(socket, io)

@@ -1,6 +1,7 @@
 const invoiceRecords = require('../../../Model/invoiceRecordsModel')
 const inflowTransactionRecord = require('../../../Model/inflowsTransactionModel')
 const outflowTransactionRecord = require('../../../Model/outflowsTransactionModel')
+const budgetRequestRecords = require('../../../Model/budgetRequestModel')
 
 
 // PURCHASE ORDER
@@ -57,8 +58,27 @@ const outflowDuplication = async () => {
     return duplicates
 }
 
+//BUDGET REQUEST
+const budgetRequestDuplication = async () => {
+    const duplicates = await budgetRequestRecords.aggregate([
+        {
+            $group: {
+                _id: { requestId: "$requestId", department: "$department", category: "$category", totalRequest: "$totalRequest"},
+                count: { $sum: 1 },
+                budgetReqId: { $push: "$_id"}
+            }
+        },
+        {
+            $match: { count: { $gt: 1 } }
+        }
+    ])
+
+    return duplicates
+}
+
 module.exports = {
     purchaseOrderDuplication,
     inflowDuplication,
-    outflowDuplication
+    outflowDuplication,
+    budgetRequestDuplication
 }

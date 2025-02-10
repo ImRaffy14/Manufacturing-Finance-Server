@@ -54,7 +54,7 @@ const firstAttempt = async (req, res, next) => {
             const checkIp = await blacklistedIp.findOne({ ipAddress: ip})
             if(checkIp){
                 if(checkIp.banned === true){
-                    res.status(403).json({msg: 'Your IP has been blacklisted due to multiple failed login attempts. Please contact your administrator or supervisor to resolve this issue.'})
+                    res.status(403).json({msg: 'Your IP has been blacklisted. Please contact your administrator or supervisor to resolve this issue.'})
                     return
                 }
 
@@ -63,6 +63,8 @@ const firstAttempt = async (req, res, next) => {
                 const banExpirationTime = checkIp.banTime + checkIp.banDuration;
                 if (currentTime > banExpirationTime) {
                     await blacklistedIp.deleteOne({ ipAddress: ip });
+                    const blacklistRecords = await blacklistedIp.find({})
+                    req.io.emit('receive_blacklisted', blacklistRecords)
                     res.status(200).json({ success: true, msg: 'Your IP is no longer blacklisted. You can try logging in again.'}) 
                     return 
                 }
@@ -103,6 +105,8 @@ const firstAttempt = async (req, res, next) => {
                         { attempts: attempts + 1 , attemptDate: Date.now()},
                     )
 
+                    const blacklistRecords = await blacklistedIp.find({})
+                    req.io.emit('receive_blacklisted', blacklistRecords)
                     res.status(403).json({msg: "Your IP has been blacklisted due to excessive login attempts.", banTime: result.banTime, banDuration: result.banDuration})
                     return 
                 }
@@ -121,6 +125,8 @@ const firstAttempt = async (req, res, next) => {
                        { attempts: attempts + 1 , attemptDate: Date.now()},
                    )
 
+                   const blacklistRecords = await blacklistedIp.find({})
+                   req.io.emit('receive_blacklisted', blacklistRecords)
                    res.status(403).json({msg: "Your IP has been blacklisted due to excessive login attempts.", banTime: result.banTime, banDuration: result.banDuration})
                    return 
                }
@@ -130,11 +136,12 @@ const firstAttempt = async (req, res, next) => {
                     userId: 'Unknown ID',
                     username: 'Unknown User',
                     ipAddress: ip,
-                    banTime: 0,
+                    banTime: Date.now(),
                     banDuration: 0,
                     banned: true
                 })
-
+                    const blacklistRecords = await blacklistedIp.find({})
+                    req.io.emit('receive_blacklisted', blacklistRecords)
                     res.status(403).json({msg: "Your IP has been blacklisted due to multiple failed login attempts. Please contact your administrator or supervisor to resolve this issue.", banTime: result.banTime, banDuration: result.banDuration})
                     return 
                 }
@@ -183,7 +190,9 @@ const firstAttempt = async (req, res, next) => {
                         { ipAddress: ip},
                         { attempts: attempts + 1 , attemptDate: Date.now()},
                     )
-
+                    
+                    const blacklistRecords = await blacklistedIp.find({})
+                    req.io.emit('receive_blacklisted', blacklistRecords)
                     res.status(403).json({msg: "Your IP has been blacklisted due to excessive login attempts.", banTime: result.banTime, banDuration: result.banDuration})
                     return 
                 }
@@ -202,6 +211,8 @@ const firstAttempt = async (req, res, next) => {
                        { attempts: attempts + 1 , attemptDate: Date.now()},
                    )
 
+                   const blacklistRecords = await blacklistedIp.find({})
+                   req.io.emit('receive_blacklisted', blacklistRecords)
                    res.status(403).json({msg: "Your IP has been blacklisted due to excessive login attempts.", banTime: result.banTime, banDuration: result.banDuration})
                    return 
                }
@@ -211,11 +222,12 @@ const firstAttempt = async (req, res, next) => {
                     userId: userId,
                     username: username,
                     ipAddress: ip,
-                    banTime: 0,
+                    banTime: Date.now(),
                     banDuration: 0,
                     banned: true
                 })
-
+                    const blacklistRecords = await blacklistedIp.find({})
+                    req.io.emit('receive_blacklisted', blacklistRecords)
                     res.status(403).json({msg: "Your IP has been blacklisted due to multiple failed login attempts. Please contact your administrator or supervisor to resolve this issue.", banTime: result.banTime, banDuration: result.banDuration})
                     return 
                 }
@@ -480,7 +492,7 @@ router.post('/login', firstAttempt, async (req, res) => {
          const checkIp = await blacklistedIp.findOne({ ipAddress: ip})
          if(checkIp){
              if(checkIp.banned === true){
-                 res.status(403).json({msg: 'Your IP has been blacklisted due to multiple failed login attempts. Please contact your administrator or supervisor to resolve this issue.'})
+                 res.status(403).json({msg: 'Your IP has been blacklisted. Please contact your administrator or supervisor to resolve this issue.'})
                  return
              }
 
@@ -489,6 +501,8 @@ router.post('/login', firstAttempt, async (req, res) => {
              const banExpirationTime = checkIp.banTime + checkIp.banDuration;
              if (currentTime > banExpirationTime) {
                  await blacklistedIp.deleteOne({ ipAddress: ip });
+                 const blacklistRecords = await blacklistedIp.find({})
+                 req.io.emit('receive_blacklisted', blacklistRecords)
                  res.status(200).json({ success: true, msg: 'Your IP is no longer blacklisted. You can try logging in again.'}) 
                  return 
              }
@@ -526,6 +540,8 @@ router.post('/login', firstAttempt, async (req, res) => {
                     { attempts: attempts + 1 , attemptDate: Date.now()},
                 )
 
+                const blacklistRecords = await blacklistedIp.find({})
+                req.io.emit('receive_blacklisted', blacklistRecords)
                 res.status(403).json({msg: "Your IP has been blacklisted due to excessive login attempts.", banTime: result.banTime, banDuration: result.banDuration})
                 return 
             }
@@ -544,6 +560,8 @@ router.post('/login', firstAttempt, async (req, res) => {
                    { attempts: attempts + 1 , attemptDate: Date.now()},
                )
 
+               const blacklistRecords = await blacklistedIp.find({})
+               req.io.emit('receive_blacklisted', blacklistRecords)
                res.status(403).json({msg: "Your IP has been blacklisted due to excessive login attempts.", banTime: result.banTime, banDuration: result.banDuration})
                return 
            }
@@ -553,11 +571,12 @@ router.post('/login', firstAttempt, async (req, res) => {
                 userId: 'Unknown ID',
                 username: 'Unknown User',
                 ipAddress: ip,
-                banTime: 0,
+                banTime: Date.now(),
                 banDuration: 0,
                 banned: true
             })
-
+                const blacklistRecords = await blacklistedIp.find({})
+                req.io.emit('receive_blacklisted', blacklistRecords)
                 res.status(403).json({msg: "Your IP has been blacklisted due to multiple failed login attempts. Please contact your administrator or supervisor to resolve this issue.", banTime: result.banTime, banDuration: result.banDuration})
                 return 
             }
@@ -566,7 +585,7 @@ router.post('/login', firstAttempt, async (req, res) => {
                 { ipAddress: ip},
                 { attempts: attempts + 1 , attemptDate: Date.now()},
             )
-
+                
             res.status(400).json({msg: "Invalid Credentials"})
             return 
         }
@@ -606,7 +625,9 @@ router.post('/login', firstAttempt, async (req, res) => {
                     { ipAddress: ip},
                     { attempts: attempts + 1 , attemptDate: Date.now()},
                 )
-
+                
+                const blacklistRecords = await blacklistedIp.find({})
+                req.io.emit('receive_blacklisted', blacklistRecords)
                 res.status(403).json({msg: "Your IP has been blacklisted due to excessive login attempts.", banTime: result.banTime, banDuration: result.banDuration})
                 return 
             }
@@ -625,6 +646,8 @@ router.post('/login', firstAttempt, async (req, res) => {
                    { attempts: attempts + 1 , attemptDate: Date.now()},
                )
 
+               const blacklistRecords = await blacklistedIp.find({})
+               req.io.emit('receive_blacklisted', blacklistRecords)
                res.status(403).json({msg: "Your IP has been blacklisted due to excessive login attempts.", banTime: result.banTime, banDuration: result.banDuration})
                return 
            }
@@ -634,11 +657,12 @@ router.post('/login', firstAttempt, async (req, res) => {
                 userId: userId,
                 username: username,
                 ipAddress: ip,
-                banTime: 0,
+                banTime: Date.now(),
                 banDuration: 0,
                 banned: true
             })
-
+                const blacklistRecords = await blacklistedIp.find({})
+                req.io.emit('receive_blacklisted', blacklistRecords)
                 res.status(403).json({msg: "Your IP has been blacklisted due to multiple failed login attempts. Please contact your administrator or supervisor to resolve this issue.", banTime: result.banTime, banDuration: result.banDuration})
                 return 
             }

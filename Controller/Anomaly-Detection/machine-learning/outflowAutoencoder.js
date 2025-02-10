@@ -55,7 +55,6 @@ const buildModel = () => {
 const oTrainModel = async (inputData) => {
   const model = buildModel();
 
-  console.log('Input Data:', inputData);
   if (inputData == null || inputData.shape == null) {
     throw new Error('Input data is undefined or has no shape!');
   }
@@ -65,7 +64,6 @@ const oTrainModel = async (inputData) => {
     batchSize: 5,
     verbose: 1, // Show training progress
   });
-  console.log("Training complete!");
   return model;
 };
 
@@ -75,7 +73,6 @@ const calculateErrorThreshold = (reconstructionErrors) => {
   const stdError = Math.sqrt(reconstructionErrors.reduce((acc, err) => acc + Math.pow(err - meanError, 2), 0) / reconstructionErrors.length);
 
   const threshold = meanError + (2 * stdError); // Dynamic threshold based on error mean + 2*std
-  console.log("Dynamic Error Threshold:", threshold);
   return threshold;
 };
 
@@ -102,7 +99,7 @@ const oDetectAnomalies = async (model, records, standardizedAmounts) => {
   const anomalies = reconstructionError
     .map((error, index) => {
       if (error > threshold) {
-        console.log('Flagging as anomaly due to high reconstruction error:', error);
+
         return records[index];
       }
       return null;
@@ -127,7 +124,6 @@ const oRunAnomalyDetection = async () => {
     return [];
   }
 
-  console.log('Standardized Amounts:', standardizedAmounts);  // Log to confirm data
 
   const model = await oTrainModel(tf.tensor2d(standardizedAmounts, [standardizedAmounts.length, 1]));
 
@@ -137,7 +133,6 @@ const oRunAnomalyDetection = async () => {
   }
 
   const anomalies = await oDetectAnomalies(model, records, standardizedAmounts);
-  console.log("Anomalies detected bobo:", anomalies);
 
   return anomalies || [];
 };

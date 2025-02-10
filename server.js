@@ -33,12 +33,14 @@ const financialReportJob = require("./CRON JOB/financialReporting")
 const financialReportSocket = require("./Controller/financialReportSocketController")
 const recaptchaRoute = require("./Routes/recaptcha")
 const activeStaffSocket = require("./Controller/activeStaffSocket")
+const anomalyDetectionSocket = require("./Controller/anomalyDetectionSocketController")
 
 //FOR TESTING
 const { oRunAnomalyDetection } = require('./Controller/Anomaly-Detection/machine-learning/outflowAutoencoder')
 const { iRunAnomalyDetection } = require('./Controller/Anomaly-Detection/machine-learning/inflowAutoencoder')
 const { purchaseOrderDuplication, inflowDuplication, outflowDuplication, budgetRequestDuplication } = require('./Controller/Anomaly-Detection/rule-based/detectDuplication')
 const { generateReport } = require('./Controller/Anomaly-Detection/machine-learning/generateReport')
+
 
 
 //GET TIME
@@ -226,6 +228,7 @@ mongoose.connect(process.env.MONGGO_URI)
         depositWithdrawSocket(socket, io)
         financialReportSocket(socket,io)
         activeStaffSocket(socket, io)
+        anomalyDetectionSocket(socket, io)
         
          //User Disconnects
         socket.on("disconnect", () => {

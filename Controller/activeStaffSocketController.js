@@ -40,6 +40,7 @@ module.exports = (socket, io) => {
           return
         } else {
           console.log('Error saving record:', err.message);
+          socket.emit('active_staff_error')
         }
       }
     }
@@ -55,6 +56,7 @@ module.exports = (socket, io) => {
       }
       catch(error){
         console.error(`Staff Disconnect Error: ${error.message}`)
+        socket.emit('active_staff_error')
       }
     }
 
@@ -65,9 +67,11 @@ module.exports = (socket, io) => {
         io.to(data.socketId).emit("force_disconnect");
         const result = await activeStaffRecords.find({})
         io.emit('receive_active_staff', result)
+        socket.emit('active_staff_success', {msg: `Client is now disconnected`})
       }
       catch(error){
         console.error(`force disconnect staff error: ${error.message}`)
+        socket.emit('active_staff_error')
       }
     }
     
@@ -82,16 +86,17 @@ module.exports = (socket, io) => {
           banDuration: 0,
           banned: true
       })
-      console.log(data)
           const blacklistRecords = await blacklistedIp.find({})
           io.emit('receive_blacklisted', blacklistRecords)
           await activeStaffRecords.findOneAndDelete({ ipAddress: data.ipAddress })
           io.to(data.socketId).emit("force_disconnect");
           const result = await activeStaffRecords.find({})
           io.emit('receive_active_staff', result)
+          socket.emit('active_staff_success', {msg: `Client is now blacklisted`})
       }
       catch(error){
         console.error(`block IP address Manual Error: ${error.message}`)
+        socket.emit('active_staff_error')
       }
     }
 

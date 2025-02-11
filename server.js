@@ -189,7 +189,6 @@ app.post('/generate-report', async (req, res) => {
 })
 
 
-
 //DB connection
 mongoose.connect(process.env.MONGGO_URI)
 .then((result) => {

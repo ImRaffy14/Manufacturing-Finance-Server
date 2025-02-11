@@ -2,7 +2,9 @@ const activeStaffRecords = require('../Model/activeStaffModel')
 const blacklistedIp = require('../Model/blacklistedIpModel')
 module.exports = (socket, io) => {
 
-    const ip = socket.request.headers['x-forwarded-for'] || socket.request.connection.remoteAddress;
+  const ip = socket.request.headers['x-forwarded-for']
+  ? socket.request.headers['x-forwarded-for'].split(',')[0].trim()
+  : socket.request.connection.remoteAddress;
 
     // GET ACTIVE STAFF
     const getActiveStaff = async (data) => {
@@ -61,6 +63,8 @@ module.exports = (socket, io) => {
       try{
         await activeStaffRecords.findOneAndDelete({ ipAddress: data.ipAddress })
         io.to(data.socketId).emit("force_disconnect");
+        const result = await activeStaffRecords.find({})
+        io.emit('receive_active_staff', result)
       }
       catch(error){
         console.error(`force disconnect staff error: ${error.message}`)
@@ -78,10 +82,13 @@ module.exports = (socket, io) => {
           banDuration: 0,
           banned: true
       })
+      console.log(data)
           const blacklistRecords = await blacklistedIp.find({})
           io.emit('receive_blacklisted', blacklistRecords)
           await activeStaffRecords.findOneAndDelete({ ipAddress: data.ipAddress })
           io.to(data.socketId).emit("force_disconnect");
+          const result = await activeStaffRecords.find({})
+          io.emit('receive_active_staff', result)
       }
       catch(error){
         console.error(`block IP address Manual Error: ${error.message}`)

@@ -12,6 +12,7 @@ const userOTP = require('../Model/userOTPModel')
 const accountsModel = require('../Model/accountsModel')
 const failedAttemptLogs = require('../Model/failedAttemptsModel')
 const blacklistedIp = require('../Model/blacklistedIpModel')
+const activeStaffRecords = require('../Model/activeStaffModel')
 
 const router = express.Router()
 
@@ -758,7 +759,19 @@ router.get('/protected', verifyToken, async (req, res) => {
 });
 
 // Log out
-router.post('/logout', (req, res) => {
+router.post('/logout', async (req, res) => {
+    // SET OFFLINE STAFF
+    const ip = 
+    req.headers['cf-connecting-ip'] ||  
+    req.headers['x-real-ip'] ||
+    req.headers['x-forwarded-for'] ||
+    req.socket.remoteAddress || '';
+
+    await activeStaffRecords.findOneAndDelete({ ipAddress: ip })
+    const result = await activeStaffRecords.find({})
+    req.io.emit('receive_active_staff', result)
+
+    // CLEAR COOKIES (REFRESH TOKEN)
     res.clearCookie('refreshToken', { httpOnly: true, secure: true, sameSite: 'None' });
     res.sendStatus(204);
 });

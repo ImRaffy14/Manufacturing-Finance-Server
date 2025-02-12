@@ -88,7 +88,7 @@ const suspiciousLogin = async () => {
             }  
         },
         {
-            $match: { $count: { $gt: 1 } }
+            $match: { count: { $gt: 1 } }
         }
     ])
 

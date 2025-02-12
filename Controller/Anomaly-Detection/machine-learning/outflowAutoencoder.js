@@ -10,6 +10,7 @@ const fetchTransactionRecords = async () => {
       id: record._id.toString(),
       dateTime: record.dateTime,
       approverId: record.approverId.toString(),
+      approver: record.approver,
       payableId: record.payableId.toString(),
       category: record.category,
       department: record.department,

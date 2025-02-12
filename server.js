@@ -40,7 +40,7 @@ const blacklistedSocket = require("./Controller/blacklistedSocketController")
 //FOR TESTING
 const { oRunAnomalyDetection } = require('./Controller/Anomaly-Detection/machine-learning/outflowAutoencoder')
 const { iRunAnomalyDetection } = require('./Controller/Anomaly-Detection/machine-learning/inflowAutoencoder')
-const { purchaseOrderDuplication, inflowDuplication, outflowDuplication, budgetRequestDuplication } = require('./Controller/Anomaly-Detection/rule-based/detectDuplication')
+const { purchaseOrderDuplication, inflowDuplication, outflowDuplication, budgetRequestDuplication, suspiciousLogin } = require('./Controller/Anomaly-Detection/rule-based/detectDuplication')
 const { generateReport } = require('./Controller/Anomaly-Detection/machine-learning/generateReport')
 
 
@@ -163,7 +163,7 @@ app.get('/detect-anomalies-inflow', async (req, res) => {
 })
 
 app.get('/detect-duplication', async (req, res) => {
-  const duplication = await budgetRequestDuplication()
+  const duplication = await suspiciousLogin()
 
   res.json({success: true, duplication})
 })

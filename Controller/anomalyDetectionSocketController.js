@@ -30,39 +30,69 @@ module.exports = (socket, io ) => {
 
     // GET BUDGET REQUEST DUPLICATION
     const getBudgetReqDuplication = async (data) => {
-        const result = await budgetRequestDuplication()
-        socket.emit('receive_budget_req_duplication', result)
+        try{
+            const result = await budgetRequestDuplication()
+            socket.emit('receive_budget_req_duplication', result)
+        }
+        catch(error){
+            consotle.error(`Budget req duplication error: ${error.message}`)
+        }
     }
 
     // GET PURCHASE ORDER DUPLICATION
     const getPurchaseOrderDuplication = async (data) => {
-        const result = await purchaseOrderDuplication()
-        socket.emit('receive_po_duplicaiton', result)
+        try{   
+            const result = await purchaseOrderDuplication()
+            socket.emit('receive_po_duplicaiton', result)
+        }
+        catch(error){
+            console.error(`Purchase order duplication error: ${error.message}`)
+        }
     }
 
     // GET INFLOW TRANSACTION DUPLICATION
     const getInflowTransactionDuplication = async (data) => {
-        const result = await inflowDuplication()
-        socket.emit('receive_inflow_duplication', result)
+        try{
+            const result = await inflowDuplication()
+            socket.emit('receive_inflow_duplication', result)
+        }
+        catch(error){
+            console.error(`Inflowflow transaction duplication error: ${error.message}`)
+        }
     }
 
     // GET OUTFLOW TRANSACTION DUPLICATION
     const getOutflowTransactionDuplication = async (data) => {
-        const result = await outflowDuplication()
-        socket.emit('receive_outflow_duplication', result)
+        try{
+            const result = await outflowDuplication()
+            socket.emit('receive_outflow_duplication', result)
+        }
+        catch(error){
+            console.error(`Outflow transaction duplication error: ${error.message}`)
+        }
     }
 
     // GET SUSPICIOUS LOGIN
     const getSuspiciousLogin = async (data) => {
-        const result = await suspiciousLogin()
-        socket.emit('receive_suspicious_login', result)
+        try{
+            const result = await suspiciousLogin()
+            socket.emit('receive_suspicious_login', result)
+        }
+        catch(error){
+            console.error(`Suspicious login error: ${error.message}`)
+        }
     }
 
 
     // GET FAILED ATTEMPT LOGIN
     const getFailedAttemptLogin = async (data) => {
-        const result = await failedAttemptRecords.find({})
-        socket.emit('receive_failed_attempt', result)
+        try{
+            const result = await failedAttemptRecords.find({})
+            socket.emit('receive_failed_attempt', result)
+        }
+        catch(error){
+            console.error(`Failed attempt login error: ${error.message}`)
+        }
     }
 
     socket.on('get_failed_attempt', getFailedAttemptLogin)

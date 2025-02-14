@@ -17,7 +17,8 @@
     "node-cron": "^3.0.3",
     "nodemailer": "^6.10.0",
     "nodemon": "^3.1.4",
-    "socket.io": "^4.7.5"
+    "socket.io": "^4.7.5",
+    "ua-parser-js": "^2.0.2"
   },
   "name": "manufacturing-finance-server",
   "version": "1.0.0",

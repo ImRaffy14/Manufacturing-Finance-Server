@@ -10,6 +10,7 @@ const { aggregateTransactionsCurrentMonth } = require('../Model/collectionAnalyt
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
 const axios = require('axios')
+const { outflowDuplication } = require('../Controller/Anomaly-Detection/rule-based/detectDuplication')
 
 module.exports = (socket, io) =>{
 
@@ -171,6 +172,9 @@ module.exports = (socket, io) =>{
 
         const totalCash = await totalCompanyCash()
         io.emit("receive_total_cash", totalCash)
+
+        const resultDuplication = await outflowDuplication()
+        io.emit('receive_outflow_duplication', resultDuplication)
     }
 
     //RESPONSE TO FINANCE CLIENT

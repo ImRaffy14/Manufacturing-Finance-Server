@@ -84,7 +84,8 @@ const suspiciousLogin = async () => {
             $group: {
                 _id: { userId: "$userId", username: "$username", role: "$role" },
                 count: { $sum: 1 },
-                ipAddress: { $push: "$ipAddress" }
+                ipAddress: { $push: "$ipAddress" },
+                deviceInfo: { $push: "$deviceInfo"}
             }  
         },
         {

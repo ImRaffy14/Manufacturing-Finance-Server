@@ -8,7 +8,9 @@ const blacklistedIpSchema = new Schema({
     ipAddress: { type: String, required: true},
     banTime: { type: Number },
     banDuration: { type: Number},
-    banned: { type: Boolean, default: false }
+    banned: { type: Boolean, default: false },
+    deviceInfo: { type: String },
+    location: { type: String }
 })
 
 module.exports = mongoose.model('blacklistIp', blacklistedIpSchema)

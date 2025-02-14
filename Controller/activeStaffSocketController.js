@@ -1,108 +1,143 @@
 const activeStaffRecords = require('../Model/activeStaffModel')
 const blacklistedIp = require('../Model/blacklistedIpModel')
+const { suspiciousLogin } = require('../Controller/Anomaly-Detection/rule-based/detectDuplication')
+const UAParser = require("ua-parser-js");
+const axios = require('axios')
+
 module.exports = (socket, io) => {
 
   const ip = socket.request.headers['x-forwarded-for']
   ? socket.request.headers['x-forwarded-for'].split(',')[0].trim()
   : socket.request.connection.remoteAddress;
 
-    // GET ACTIVE STAFF
-    const getActiveStaff = async (data) => {
+  const userAgent = socket.request.headers["user-agent"];
+
+  // Parse the User-Agent string
+  const parser = new UAParser();
+  parser.setUA(userAgent);
+  const deviceInfo = parser.getResult();
+
+  const deviceInformation = `${deviceInfo.device.model || "PC/Laptop"} / ${deviceInfo.browser.name} / ${deviceInfo.os.name}`
+
+
+  // GET ACTIVE STAFF
+  const getActiveStaff = async (data) => {
+    const result = await activeStaffRecords.find({})
+    socket.emit('receive_active_staff', result)
+  }
+
+
+  //LOGGING ONLINE OR ACTIVE STAFF
+  const saveActiveStaff = async (data) => {
+
+      try {
+      //CHECK IF ALREADY SAVED
+      const isSaved = await activeStaffRecords.findOne({ ipAddress: ip })
+      if(isSaved) return
+      
+      // GET IP LOCATION
+      const getLocation = await axios.get(`http://ip-api.com/json/${ip}`);
+      const location = getLocation.data.status === 'success'
+          ? `${getLocation.data.country} / ${getLocation.data.regionName} / ${getLocation.data.city}`
+          : 'N/A';
+
+      const newAS = new activeStaffRecords({
+          userId: data._id,
+          username: data.userName,
+          role: data.role,
+          ipAddress: ip,
+          deviceInfo: deviceInformation,
+          socketId: socket.id,
+          location: location
+      })
+
+      await newAS.save()
+
       const result = await activeStaffRecords.find({})
-      socket.emit('receive_active_staff', result)
-    }
+      io.emit('receive_active_staff', result)
 
+      const resultDuplication = await suspiciousLogin()
+      io.emit('receive_suspicious_login', resultDuplication)
 
-    //LOGGING ONLINE OR ACTIVE STAFF
-    const saveActiveStaff = async (data) => {
-
-        try {
-        //CHECK IF ALREADY SAVED
-        const isSaved = await activeStaffRecords.findOne({ ipAddress: ip })
-        if(isSaved) return
-
-        const newAS = new activeStaffRecords({
-            userId: data._id,
-            username: data.userName,
-            role: data.role,
-            ipAddress: ip,
-            socketId: socket.id
-        })
-
-        await newAS.save()
-
-        const result = await activeStaffRecords.find({})
-        io.emit('receive_active_staff', result)
-
-        }
-        catch (err) {
-        if (err.code === 11000) {
-          return
-        } else {
-          console.log('Error saving record:', err.message);
-          socket.emit('active_staff_error')
-        }
       }
-    }
-
-    // REMOVED DISCONNECTED STAFF
-    const staffDisconnect = async (data) => {
-      try{
-        const offlineStaff = await activeStaffRecords.findOneAndDelete({ ipAddress: ip })
-        if(offlineStaff){
-          const result = await activeStaffRecords.find({})
-          io.emit('receive_active_staff', result)
-        }
-      }
-      catch(error){
-        console.error(`Staff Disconnect Error: ${error.message}`)
+      catch (err) {
+      if (err.code === 11000) {
+        return
+      } else {
+        console.log('Error Active Staff record:', err.message);
         socket.emit('active_staff_error')
       }
     }
+  }
 
-    // FORCE DISCONNECT STAFF
-    const forceDisconnectStaff = async (data) => {
-      try{
+  // REMOVED DISCONNECTED STAFF
+  const staffDisconnect = async (data) => {
+    try{
+      const offlineStaff = await activeStaffRecords.findOneAndDelete({ ipAddress: ip })
+      if(offlineStaff){
+        const result = await activeStaffRecords.find({})
+        io.emit('receive_active_staff', result)
+        const resultDuplication = await suspiciousLogin()
+        io.emit('receive_suspicious_login', resultDuplication)
+      }
+    }
+    catch(error){
+      console.error(`Staff Disconnect Error: ${error.message}`)
+      socket.emit('active_staff_error')
+    }
+  }
+
+  // FORCE DISCONNECT STAFF
+  const forceDisconnectStaff = async (data) => {
+    try{
+      await activeStaffRecords.findOneAndDelete({ ipAddress: data.ipAddress })
+      io.to(data.socketId).emit("force_disconnect");
+      const result = await activeStaffRecords.find({})
+      io.emit('receive_active_staff', result)
+      socket.emit('active_staff_success', {msg: `Client is now disconnected`})
+
+      const resultDuplication = await suspiciousLogin()
+      io.emit('receive_suspicious_login', resultDuplication)
+    }
+    catch(error){
+      console.error(`force disconnect staff error: ${error.message}`)
+      socket.emit('active_staff_error')
+    }
+  }
+  
+  // BAN STAFF
+  const blockIpAddress = async (data) => {
+    try{
+      await blacklistedIp.create({
+        userId: data.userId,
+        username: data.username,
+        ipAddress: data.ipAddress,
+        banTime: Date.now(),
+        banDuration: 0,
+        banned: true,
+        deviceInfo: data.deviceInfo,
+        location: data.location
+    })
+        const blacklistRecords = await blacklistedIp.find({})
+        io.emit('receive_blacklisted', blacklistRecords)
         await activeStaffRecords.findOneAndDelete({ ipAddress: data.ipAddress })
         io.to(data.socketId).emit("force_disconnect");
         const result = await activeStaffRecords.find({})
         io.emit('receive_active_staff', result)
-        socket.emit('active_staff_success', {msg: `Client is now disconnected`})
-      }
-      catch(error){
-        console.error(`force disconnect staff error: ${error.message}`)
-        socket.emit('active_staff_error')
-      }
-    }
-    
-    // BAN STAFF
-    const blockIpAddress = async (data) => {
-      try{
-        await blacklistedIp.create({
-          userId: data.userId,
-          username: data.username,
-          ipAddress: data.ipAddress,
-          banTime: Date.now(),
-          banDuration: 0,
-          banned: true
-      })
-          const blacklistRecords = await blacklistedIp.find({})
-          io.emit('receive_blacklisted', blacklistRecords)
-          await activeStaffRecords.findOneAndDelete({ ipAddress: data.ipAddress })
-          io.to(data.socketId).emit("force_disconnect");
-          const result = await activeStaffRecords.find({})
-          io.emit('receive_active_staff', result)
-          socket.emit('active_staff_success', {msg: `Client is now blacklisted`})
-      }
-      catch(error){
-        console.error(`block IP address Manual Error: ${error.message}`)
-        socket.emit('active_staff_error')
-      }
-    }
+        socket.emit('active_staff_success', {msg: `Client is now blacklisted`})
 
-    socket.on('block_ip_address', blockIpAddress)
-    socket.on('force_disconnect_staff', forceDisconnectStaff)
-    socket.on('get_active_staff', getActiveStaff)
-    socket.on('save_active_staff', saveActiveStaff)
-    socket.on('staff_disconnect', staffDisconnect)
+        const resultDuplication = await suspiciousLogin()
+        io.emit('receive_suspicious_login', resultDuplication)
+    }
+    catch(error){
+      console.error(`block IP address Manual Error: ${error.message}`)
+      socket.emit('active_staff_error')
+    }
+  }
+
+  socket.on('block_ip_address', blockIpAddress)
+  socket.on('force_disconnect_staff', forceDisconnectStaff)
+  socket.on('get_active_staff', getActiveStaff)
+  socket.on('save_active_staff', saveActiveStaff)
+  socket.on('staff_disconnect', staffDisconnect)
 }

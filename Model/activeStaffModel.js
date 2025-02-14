@@ -17,6 +17,8 @@ const activeStaffSchema = new schema({
     userId: { type: String, required:true },
     username: { type: String, required:true },
     role: { type: String, required:true },
+    deviceInfo: { type: String },
+    location: { type: String }
 })
 
 module.exports = mongoose.model('activeStaff', activeStaffSchema)

@@ -1,5 +1,6 @@
 const invoiceRecords = require("../Model/invoiceRecordsModel")
 const { getPendingSalesData, getNonPendingRecords } = require("../Model/invoiceAggregation")
+const { purchaseOrderDuplication } = require('../Controller/Anomaly-Detection/rule-based/detectDuplication')
 
 module.exports = (socket, io) => {
 
@@ -47,6 +48,9 @@ module.exports = (socket, io) => {
             const resultNonPending = await getNonPendingRecords()
             io.emit("receive_non_pending_invoice", resultNonPending)
             
+            // IO EMIT FOR PURCHASE ORDER DUPLICATION
+            const result = await purchaseOrderDuplication()
+            io.emit('receive_po_duplicaiton', result)
         }
         catch(err){
             console.log(err.message)

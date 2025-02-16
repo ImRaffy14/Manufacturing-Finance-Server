@@ -14,6 +14,8 @@ const failedAttemptLogs = require('../Model/failedAttemptsModel')
 const blacklistedIp = require('../Model/blacklistedIpModel')
 const activeStaffRecords = require('../Model/activeStaffModel')
 const UAParser = require("ua-parser-js");
+const axios = require('axios')
+const { generateServiceToken } = require('../middleware/gatewayTokenGenerator')
 
 const router = express.Router()
 
@@ -85,7 +87,13 @@ const firstAttempt = async (req, res, next) => {
 
 
             // FIND USER'S ACCOUNT
-            const user = await accountsModel.findOne({ userName: userName})
+            // GET STAFF ACCOUNTS
+            const serviceToken = generateServiceToken()
+            const response = await axios.get(`${process.env.API_GATEWAY_URL}/admin/get-accounts`, {
+                headers: { Authorization: `Bearer ${serviceToken}` }
+            })
+            const accountData = response.data
+            const user = accountData.find(account => account.userName === userName)
 
             if(!user){
                 const attemptLog = await failedAttemptLogs.findOne({ ipAddress: ip })
@@ -151,6 +159,11 @@ const firstAttempt = async (req, res, next) => {
                }
 
                 if(attempts == 7){
+                    // GET IP LOCATION
+                    const getLocation = await axios.get(`http://ip-api.com/json/${ip}`);
+                    const location = getLocation.data.status === 'success'
+                        ? `${getLocation.data.country} / ${getLocation.data.regionName} / ${getLocation.data.city}`
+                        : 'N/A';
                     const result = await blacklistedIp.create({
                     userId: 'Unknown ID',
                     username: 'Unknown User',
@@ -158,7 +171,8 @@ const firstAttempt = async (req, res, next) => {
                     banTime: Date.now(),
                     banDuration: 0,
                     banned: true,
-                    deviceInfo: deviceInformation
+                    deviceInfo: deviceInformation,
+                    location: location
                 })
                     const blacklistRecords = await blacklistedIp.find({})
                     req.io.emit('receive_blacklisted', blacklistRecords)
@@ -253,6 +267,11 @@ const firstAttempt = async (req, res, next) => {
                }
 
                 if(attempts == 7){
+                    // GET IP LOCATION
+                    const getLocation = await axios.get(`http://ip-api.com/json/${ip}`);
+                    const location = getLocation.data.status === 'success'
+                        ? `${getLocation.data.country} / ${getLocation.data.regionName} / ${getLocation.data.city}`
+                        : 'N/A';
                     const result = await blacklistedIp.create({
                     userId: userId,
                     username: username,
@@ -260,7 +279,8 @@ const firstAttempt = async (req, res, next) => {
                     banTime: Date.now(),
                     banDuration: 0,
                     banned: true,
-                    deviceInfo: deviceInformation
+                    deviceInfo: deviceInformation,
+                    location: location
                 })
                     const blacklistRecords = await blacklistedIp.find({})
                     req.io.emit('receive_blacklisted', blacklistRecords)
@@ -558,7 +578,14 @@ router.post('/login', firstAttempt, async (req, res) => {
              return
          }
 
-        const user = await accounts.findOne({ userName })
+        // GET STAFF ACCOUNTS
+        const serviceToken = generateServiceToken()
+        const response = await axios.get(`${process.env.API_GATEWAY_URL}/admin/get-accounts`, {
+            headers: { Authorization: `Bearer ${serviceToken}` }
+        })
+        const accountData = response.data
+        const user = accountData.find(account => account.userName === userName)
+
         if(!user){
             const attemptLog = await failedAttemptLogs.findOne({ ipAddress: ip })
 
@@ -623,6 +650,11 @@ router.post('/login', firstAttempt, async (req, res) => {
            }
 
             if(attempts == 7){
+                // GET IP LOCATION
+                const getLocation = await axios.get(`http://ip-api.com/json/${ip}`);
+                const location = getLocation.data.status === 'success'
+                    ? `${getLocation.data.country} / ${getLocation.data.regionName} / ${getLocation.data.city}`
+                    : 'N/A';
                 const result = await blacklistedIp.create({
                 userId: 'Unknown ID',
                 username: 'Unknown User',
@@ -630,7 +662,8 @@ router.post('/login', firstAttempt, async (req, res) => {
                 banTime: Date.now(),
                 banDuration: 0,
                 banned: true,
-                deviceInfo: deviceInformation
+                deviceInfo: deviceInformation,
+                location: location
             })
                 const blacklistRecords = await blacklistedIp.find({})
                 req.io.emit('receive_blacklisted', blacklistRecords)
@@ -724,6 +757,11 @@ router.post('/login', firstAttempt, async (req, res) => {
            }
 
             if(attempts == 7){
+                // GET IP LOCATION
+                const getLocation = await axios.get(`http://ip-api.com/json/${ip}`);
+                const location = getLocation.data.status === 'success'
+                    ? `${getLocation.data.country} / ${getLocation.data.regionName} / ${getLocation.data.city}`
+                    : 'N/A';
                 const result = await blacklistedIp.create({
                 userId: userId,
                 username: username,
@@ -731,7 +769,8 @@ router.post('/login', firstAttempt, async (req, res) => {
                 banTime: Date.now(),
                 banDuration: 0,
                 banned: true,
-                deviceInfo: deviceInformation
+                deviceInfo: deviceInformation,
+                location: location
             })
                 const blacklistRecords = await blacklistedIp.find({})
                 req.io.emit('receive_blacklisted', blacklistRecords)
@@ -796,6 +835,7 @@ router.post('/login', firstAttempt, async (req, res) => {
     }
 })
 
+
 // Refresh token route
 router.post('/refresh-token', (req, res) => {
     const refreshToken = req.cookies.refreshToken; 
@@ -832,8 +872,17 @@ const verifyToken = (req, res, next) => {
 // Protected Route
 router.get('/protected', verifyToken, async (req, res) => {
     try {
-        const user = await accounts.findById(req.user.id).select('-password');
-        res.json(user);
+
+        // GET STAFF ACCOUNTS
+        const serviceToken = generateServiceToken()
+        const response = await axios.get(`${process.env.API_GATEWAY_URL}/admin/get-accounts`, {
+            headers: { Authorization: `Bearer ${serviceToken}` }
+        })
+        const accountData = response.data
+        const users = accountData.find(account => account._id === req.user.id)
+        const { password, ...usersWithoutPassword } = users
+
+        res.json(usersWithoutPassword);
     } catch (err) {
         res.status(500).json({ message: 'Server error' });
     }

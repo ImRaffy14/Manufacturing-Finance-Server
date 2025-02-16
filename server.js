@@ -14,7 +14,7 @@ const app = express()
 
 //Controllers & Routes
 const testingSocketController = require("./Controller/testingSocketController")
-const accountRoutes = require("./Routes/accounts")
+// const accountRoutes = require("./Routes/accounts")
 const authRoutes = require("./Routes/auth")
 const auditTrailRoute = require("./Routes/auditTrails")
 const auditTrailSocket = require("./Controller/auditTrailSocketContoller")
@@ -138,7 +138,7 @@ app.get('/', (req, res) => {
 
 //API ENDPOINTS
 app.use(process.env.API_SAMPLE, sampleRoutes)
-app.use(process.env.API_ACCOUNT, accountRoutes)
+// app.use(process.env.API_ACCOUNT, accountRoutes)
 app.use(process.env.API_AUTH, authRoutes)
 app.use(process.env.API_TRAILS, auditTrailRoute)
 app.use(process.env.API_REQUEST_BUDGET, budgetRequestRoute)

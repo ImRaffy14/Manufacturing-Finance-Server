@@ -11,6 +11,7 @@ const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
 const axios = require('axios')
 const { outflowDuplication } = require('../Controller/Anomaly-Detection/rule-based/detectDuplication')
+const { verifyPassword } = require('../middleware/passwordVerification')
 
 module.exports = (socket, io) =>{
 
@@ -63,14 +64,9 @@ module.exports = (socket, io) =>{
     }
 
 
-    const user = await accounts.findOne({ userName })
+    const user = await verifyPassword(userName, password)
     if(!user){
         return socket.emit('receive_budget_authUser_invalid', {msg: 'Invalid Credentials'})
-    }
-
-    const isMatch = await bcrypt.compare(password, user.password)
-    if(!isMatch){
-       return socket.emit('receive_budget_authUser_invalid', {msg: 'Invalid Credentials'})
     }
 
 
@@ -138,7 +134,6 @@ module.exports = (socket, io) =>{
                 documents: budgetReqData.documents
             }
 
-            console.log(statusReqData)
             const token = generateServiceToken();
             const response = await axios.post(`${process.env.API_GATEWAY_URL}/finance/update-budget-status`, statusReqData, {
               headers: { Authorization: `Bearer ${token}` },
@@ -201,14 +196,9 @@ module.exports = (socket, io) =>{
         const userName = data.userName
         const password = data.password
 
-        const user = await accounts.findOne({ userName })
+        const user = await verifyPassword(userName, password)
         if(!user){
             return socket.emit('receive_budget_reserve_authUser_invalid', {msg: 'Invalid Credentials'})
-        }
-
-        const isMatch = await bcrypt.compare(password, user.password)
-        if(!isMatch){
-        return socket.emit('receive_budget_reserve_authUser_invalid', {msg: 'Invalid Credentials'})
         }
 
         const availableBudget = await allocateBudget()

@@ -5,6 +5,7 @@ const { getToAuditRecords } = require('../Model/invoiceAggregation')
 const { totalCompanyCash } = require('../Model/totalCashAggregation')
 const { aggregateTransactionsCurrentMonth } = require('../Model/collectionAnalyticsAggregation')
 const { inflowDuplication } = require('../Controller/Anomaly-Detection/rule-based/detectDuplication')
+const { verifyPassword } = require('../middleware/passwordVerification')
 
 
 const bcrypt = require('bcryptjs')
@@ -31,15 +32,11 @@ module.exports = (socket, io) => {
         const password = data.password
         const invoiceId = data.invoiceId
 
-        const user = await accounts.findOne({ userName })
+        const user = await verifyPassword(userName, password)
         if(!user){
             return socket.emit('receive_audit_authUser_invalid', {msg: 'Invalid Credentials'})
         }
-
-        const isMatch = await bcrypt.compare(password, user.password)
-        if(!isMatch){
-           return socket.emit('receive_audit_authUser_invalid', {msg: 'Invalid Credentials'})
-        }
+        
 
         const transactionMatched = await inflowsTransaction.findOne({ invoiceId })
 

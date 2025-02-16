@@ -68,13 +68,13 @@ const addBudgetRequestFinance = async(req, res) => {
         const saveRequest = await newRequest.save()
 
         if(saveRequest){
-            res.status(200).json({msg: 'Your Request is on process'})
             const requestData = await pendingRequests()
             req.io.emit('receive_budget_request_pending', requestData)
             req.io.emit('receive_budget_request_length', requestData.onProcessRequestBudgetCount)
             req.io.emit('receive_payable_length', requestData.pendingBudgetRequestsCount.totalCount)
             const result = await budgetRequestDuplication()
-            io.emit('receive_budget_req_duplication', result)
+            req.io.emit('receive_budget_req_duplication', result)
+            res.status(200).json({msg: 'Your Request is on process'})
         }
     }
     catch (err){

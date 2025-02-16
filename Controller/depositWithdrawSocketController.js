@@ -3,6 +3,7 @@ const depositRecords = require('../Model/depositModel')
 const withdrawRecords = require('../Model/withdrawModel')
 const bcrypt = require('bcryptjs')
 const { totalCompanyCash } = require('../Model/totalCashAggregation')
+const { verifyPassword } = require('../middleware/passwordVerification')
 
 module.exports = (socket, io) => {
 
@@ -26,16 +27,12 @@ module.exports = (socket, io) => {
         const userName = data.username
         const password = data.password
 
-        const user = await accounts.findOne({ userName })
+        // VERIFY PASSWORD
+        const user = await verifyPassword(userName, password)
         if(!user){
             return socket.emit('receive_deposit_authUser_invalid', {msg: 'Invalid Credentials'})
         }
-    
-        const isMatch = await bcrypt.compare(password, user.password)
-        if(!isMatch){
-           return socket.emit('receive_deposit_authUser_invalid', {msg: 'Invalid Credentials'})
-        }
-        
+
         const newDeposit = new depositRecords({dateTime: getCurrentDateTime(), adminId: user._id, admin: user.userName, totalAmount: data.totalAmount})
         await newDeposit.save()
 
@@ -51,14 +48,10 @@ module.exports = (socket, io) => {
         const userName = data.username
         const password = data.password
 
-        const user = await accounts.findOne({ userName })
+        // VERIFY PASSWORD
+        const user = await verifyPassword(userName, password)
         if(!user){
-            return socket.emit('receive_withdraw_authUser_invalid', {msg: 'Invalid Credentials'})
-        }
-    
-        const isMatch = await bcrypt.compare(password, user.password)
-        if(!isMatch){
-           return socket.emit('receive_withdraw_authUser_invalid', {msg: 'Invalid Credentials'})
+            return socket.emit('receive_deposit_authUser_invalid', {msg: 'Invalid Credentials'})
         }
 
         const newWithdraw = new withdrawRecords({dateTime: getCurrentDateTime(), adminId: user._id, admin: user.userName, totalAmount: data.totalAmount})

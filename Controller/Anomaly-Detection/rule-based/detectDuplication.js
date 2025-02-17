@@ -96,7 +96,10 @@ const suspiciousLogin = async () => {
                 _id: { userId: "$userId", username: "$username", role: "$role" },
                 count: { $sum: 1 },
                 ipAddress: { $push: "$ipAddress" },
-                deviceInfo: { $push: "$deviceInfo"}
+                deviceInfo: { $push: "$deviceInfo"},
+                location: { $push: "$location"},
+                socketId: { $push: "$socketId"}
+
             }  
         },
         {

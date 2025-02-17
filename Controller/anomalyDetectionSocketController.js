@@ -2,7 +2,7 @@ const { oRunAnomalyDetection } = require('../Controller/Anomaly-Detection/machin
 const { iRunAnomalyDetection } = require('../Controller/Anomaly-Detection/machine-learning/inflowAutoencoder')
 const { purchaseOrderDuplication, inflowDuplication, outflowDuplication, budgetRequestDuplication, suspiciousLogin } = require('../Controller/Anomaly-Detection/rule-based/detectDuplication')
 const failedAttemptRecords = require('../Model/failedAttemptsModel')
-const resolvedAnomalies = require('../Model/resolvedAnomaliesModel')
+const resolvedAnomalies = require('../Model/processAnomaliesModel')
 
 module.exports = (socket, io ) => {
     
@@ -96,20 +96,28 @@ module.exports = (socket, io ) => {
         }
     }
 
-    // RESOLVE ANOMALY
-    const handleResolveAnomaly = async (data) => {
+    // INVESTIGATE ANOMALY
+    const handleInvestigateAnomaly = async (data) => {
         try{
+            const isSaved = await resolvedAnomalies.find({ dataId: data.dataId, anomalyFrom: data.anomalyFrom})
+            if(isSaved.length > 0){
+                return socket.emit('new_investigate_error', { msg: "This Data is already on investigation"})
+            }
+
             const newRA = new resolvedAnomalies({
                 anomalyType: data.anomalyType,
                 dataId: data.dataId,
                 anomalyFrom: data.anomalyFrom,
                 description: data.description,
-                resolvedBy: data.resolvedBy,
+                investigateBy: data.investigateBy,
+                investigateDate: data.investigateDate,
+                status: data.status
             })
 
             await newRA.save()
 
-            const result = await resolvedAnomalies.find({})
+            socket.emit('receive_new_investigate')
+            const result = await resolvedAnomalies.find({}).sort({ createdAt: 1 })
             io.emit('receive_resolved_anomalies', result)
         }
         catch(error){
@@ -119,12 +127,12 @@ module.exports = (socket, io ) => {
 
     // GET RESOLVED ANOMALIES
     const getResolvedAnomalies = async (data) => {
-        const result = await resolvedAnomalies.find({})
+        const result = await resolvedAnomalies.find({}).sort({ createdAt: 1})
         socket.emit('receive_resolved_anomalies', result)
     }
 
     socket.on('get_resolved_anomalies', getResolvedAnomalies)
-    socket.on('resolve_anomaly', handleResolveAnomaly)
+    socket.on('investigate_anomaly', handleInvestigateAnomaly)
     socket.on('get_failed_attempt', getFailedAttemptLogin)
     socket.on('get_suspicious_login', getSuspiciousLogin)
     socket.on('get_outflow_duplication', getOutflowTransactionDuplication)

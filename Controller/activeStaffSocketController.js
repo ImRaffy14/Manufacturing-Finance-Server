@@ -3,6 +3,7 @@ const blacklistedIp = require('../Model/blacklistedIpModel')
 const { suspiciousLogin } = require('../Controller/Anomaly-Detection/rule-based/detectDuplication')
 const UAParser = require("ua-parser-js");
 const axios = require('axios')
+const { verifyPassword } = require('../middleware/passwordVerification')
 
 module.exports = (socket, io) => {
 
@@ -90,8 +91,13 @@ module.exports = (socket, io) => {
   // FORCE DISCONNECT STAFF
   const forceDisconnectStaff = async (data) => {
     try{
-      await activeStaffRecords.findOneAndDelete({ ipAddress: data.ipAddress })
-      io.to(data.socketId).emit("force_disconnect");
+      const user = await verifyPassword(data.userName, data.password)
+      if(!user){
+          return socket.emit('error_verification', {msg: 'Invalid Credentials'})
+      }
+      
+      await activeStaffRecords.findOneAndDelete({ ipAddress: data.row.ipAddress })
+      io.to(data.row.socketId).emit("force_disconnect");
       const result = await activeStaffRecords.find({})
       io.emit('receive_active_staff', result)
       socket.emit('active_staff_success', {msg: `Client is now disconnected`})
@@ -108,19 +114,24 @@ module.exports = (socket, io) => {
   // BAN STAFF
   const blockIpAddress = async (data) => {
     try{
+      const user = await verifyPassword(data.userName, data.password)
+      if(!user){
+          return socket.emit('error_verification', {msg: 'Invalid Credentials'})
+      }
+
       await blacklistedIp.create({
-        userId: data.userId,
-        username: data.username,
-        ipAddress: data.ipAddress,
+        userId: data.row.userId,
+        username: data.row.username,
+        ipAddress: data.row.ipAddress,
         banTime: Date.now(),
         banDuration: 0,
         banned: true,
-        deviceInfo: data.deviceInfo,
-        location: data.location
+        deviceInfo: data.row.deviceInfo,
+        location: data.row.location
     })
         const blacklistRecords = await blacklistedIp.find({})
         io.emit('receive_blacklisted', blacklistRecords)
-        await activeStaffRecords.findOneAndDelete({ ipAddress: data.ipAddress })
+        await activeStaffRecords.findOneAndDelete({ ipAddress: data.row.ipAddress })
         io.to(data.socketId).emit("force_disconnect");
         const result = await activeStaffRecords.find({})
         io.emit('receive_active_staff', result)

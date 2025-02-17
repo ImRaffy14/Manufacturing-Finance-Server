@@ -690,7 +690,7 @@ router.post('/login', firstAttempt, async (req, res) => {
         // CHECK IF THE PASSWORD IS MATCH
         const isMatch = await bcrypt.compare(password, user.password)
         if(!isMatch){
-
+        
             const attemptLog = await failedAttemptLogs.findOne({ ipAddress: ip })
             
             // GETS USER CREDENTIAL

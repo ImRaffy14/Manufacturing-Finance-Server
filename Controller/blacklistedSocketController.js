@@ -1,4 +1,5 @@
 const blacklistedRecords = require('../Model/blacklistedIpModel')
+const { verifyPassword } = require('../middleware/passwordVerification')
 
 module.exports = (socket, io) => {
 
@@ -19,7 +20,12 @@ module.exports = (socket, io) => {
     // RESOLVE BLACKLISTED ACCOUNT
     const resolveBlacklistedAccount = async (data) => {
         try{
-            await blacklistedRecords.findOneAndDelete({ _id: data._id})
+            const user = await verifyPassword(data.userName, data.password)
+            if(!user){
+                return socket.emit('error_verification', {msg: 'Invalid Credentials'})
+            }
+
+            await blacklistedRecords.findOneAndDelete({ _id: data.row._id})
             const result = await blacklistedRecords.find({})
             if(result){
                 io.emit("receive_blacklisted", result)

@@ -2,6 +2,7 @@ const { oRunAnomalyDetection } = require('../Controller/Anomaly-Detection/machin
 const { iRunAnomalyDetection } = require('../Controller/Anomaly-Detection/machine-learning/inflowAutoencoder')
 const { purchaseOrderDuplication, inflowDuplication, outflowDuplication, budgetRequestDuplication, suspiciousLogin } = require('../Controller/Anomaly-Detection/rule-based/detectDuplication')
 const failedAttemptRecords = require('../Model/failedAttemptsModel')
+const resolvedAnomalies = require('../Model/resolvedAnomaliesModel')
 
 module.exports = (socket, io ) => {
     
@@ -95,6 +96,35 @@ module.exports = (socket, io ) => {
         }
     }
 
+    // RESOLVE ANOMALY
+    const handleResolveAnomaly = async (data) => {
+        try{
+            const newRA = new resolvedAnomalies({
+                anomalyType: data.anomalyType,
+                dataId: data.dataId,
+                anomalyFrom: data.anomalyFrom,
+                description: data.description,
+                resolvedBy: data.resolvedBy,
+            })
+
+            await newRA.save()
+
+            const result = await resolvedAnomalies.find({})
+            io.emit('receive_resolved_anomalies', result)
+        }
+        catch(error){
+            console.error(`Resolve anomaly error: ${error.message}`)
+        }
+    }
+
+    // GET RESOLVED ANOMALIES
+    const getResolvedAnomalies = async (data) => {
+        const result = await resolvedAnomalies.find({})
+        socket.emit('receive_resolved_anomalies', result)
+    }
+
+    socket.on('get_resolved_anomalies', getResolvedAnomalies)
+    socket.on('resolve_anomaly', handleResolveAnomaly)
     socket.on('get_failed_attempt', getFailedAttemptLogin)
     socket.on('get_suspicious_login', getSuspiciousLogin)
     socket.on('get_outflow_duplication', getOutflowTransactionDuplication)

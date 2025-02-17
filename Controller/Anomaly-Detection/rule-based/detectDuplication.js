@@ -62,21 +62,32 @@ const outflowDuplication = async () => {
 //BUDGET REQUEST
 const budgetRequestDuplication = async () => {
     const duplicates = await budgetRequestRecords.aggregate([
-        {
-            $group: {
-                _id: { requestId: "$requestId", department: "$department", category: "$category", totalRequest: "$totalRequest"},
-                count: { $sum: 1 },
-                budgetReqId: { $push: "$_id"}
-            }
-        },
-        {
-            $match: { count: { $gt: 1 } }
+      {
+        $match: {
+          requestId: { $ne: "N/A" }
         }
-    ])
-
-    return duplicates
-}
-
+      },
+      {
+        $group: {
+          _id: {
+            requestId: "$requestId",
+            department: "$department",
+            category: "$category",
+            totalRequest: "$totalRequest"
+          },
+          count: { $sum: 1 },
+          budgetReqId: { $push: "$_id" }
+        }
+      },
+      {
+        $match: {
+          count: { $gt: 1 }
+        }
+      }
+    ]);
+  
+    return duplicates;
+  }
 //SUSPICIOUS LOGIN
 const suspiciousLogin = async () => {
     const result = await activeStaffRecords.aggregate([

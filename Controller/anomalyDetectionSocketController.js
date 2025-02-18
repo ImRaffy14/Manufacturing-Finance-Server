@@ -3,6 +3,9 @@ const { iRunAnomalyDetection } = require('../Controller/Anomaly-Detection/machin
 const { purchaseOrderDuplication, inflowDuplication, outflowDuplication, budgetRequestDuplication, suspiciousLogin } = require('../Controller/Anomaly-Detection/rule-based/detectDuplication')
 const failedAttemptRecords = require('../Model/failedAttemptsModel')
 const resolvedAnomalies = require('../Model/processAnomaliesModel')
+const blacklistedIp = require('../Model/blacklistedIpModel')
+const axios = require('axios')
+const { verifyPassword } = require('../middleware/passwordVerification')
 
 module.exports = (socket, io ) => {
     
@@ -131,6 +134,38 @@ module.exports = (socket, io ) => {
         socket.emit('receive_resolved_anomalies', result)
     }
 
+    // BAN CLIENT IP ADDRESS FROM FAILED ATTEMTPS LOGS
+    const handleBlockIp = async (data) => {
+        try{
+            const user = await verifyPassword(data.userName, data.password)
+            if(!user){
+                return socket.emit('error_verification', {msg: 'Invalid Credentials'})
+            }
+      
+            await blacklistedIp.create({
+              userId: data.row.userId,
+              username: data.row.username,
+              ipAddress: data.row.ipAddress,
+              banTime: Date.now(),
+              banDuration: 0,
+              banned: true,
+          }) 
+            await failedAttemptRecords.findOneAndDelete({ _id: data.row._id})
+            const FAL = await failedAttemptRecords.find({})
+            io.emit('receive_failed_attempt', FAL)
+            socket.emit('block_ip_FAL_success', {msg: `Client is now blacklisted`})
+            const blacklistRecords = await blacklistedIp.find({})
+            io.emit('receive_blacklisted', blacklistRecords)
+            
+
+          }
+          catch(error){
+            console.error(`block IP address Manual From FAL Error: ${error.message}`)
+            socket.emit('block_ip_FAL_error')
+          }
+    }
+
+    socket.on('block_ip_FAL', handleBlockIp)
     socket.on('get_resolved_anomalies', getResolvedAnomalies)
     socket.on('investigate_anomaly', handleInvestigateAnomaly)
     socket.on('get_failed_attempt', getFailedAttemptLogin)

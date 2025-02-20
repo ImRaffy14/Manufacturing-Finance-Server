@@ -8,7 +8,7 @@ const fetchTransactionRecords = async () => {
     const records = await inflowTransactionRecords.find({})
 
     return records.map(record => ({
-      id: record._id.toString(),
+      _id: record._id.toString(),
       dateTime: record.dateTime,
       auditor: record.auditor.toString(),
       auditorId: record.auditorId.toString(),

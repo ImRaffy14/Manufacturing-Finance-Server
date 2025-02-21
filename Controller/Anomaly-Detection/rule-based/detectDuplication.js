@@ -3,6 +3,7 @@ const inflowTransactionRecord = require('../../../Model/inflowsTransactionModel'
 const outflowTransactionRecord = require('../../../Model/outflowsTransactionModel')
 const budgetRequestRecords = require('../../../Model/budgetRequestModel')
 const activeStaffRecords = require('../../../Model/activeStaffModel')
+const { aggregateAnomalies } = require('../../../Model/resolvedAnomaliesAggregation')
 
 
 // PURCHASE ORDER
@@ -110,10 +111,29 @@ const suspiciousLogin = async () => {
     return result;
 }
 
+// GET TOTAL LENGTH
+const totalLength = async () => {
+    const purchaseOrderTotal = await purchaseOrderDuplication()
+    const inflowDuplicationTotal = await inflowDuplication()
+    const outflowDuplicationTotal = await outflowDuplication()
+    const budgetReqDuplicationTotal = await budgetRequestDuplication()
+    const suspiciousLoginTotal = await suspiciousLogin()
+    const processedTotal = await aggregateAnomalies()
+
+    const totalAnomaly = purchaseOrderTotal.length + inflowDuplicationTotal.length 
+                        + outflowDuplicationTotal.length + budgetReqDuplicationTotal.length + suspiciousLoginTotal.length;
+
+    return {
+        totalAnomaly,
+        processedTotal
+    }                   
+}
+
 module.exports = {
     purchaseOrderDuplication,
     inflowDuplication,
     outflowDuplication,
     budgetRequestDuplication,
-    suspiciousLogin
+    suspiciousLogin,
+    totalLength
 }

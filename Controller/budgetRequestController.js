@@ -8,7 +8,7 @@ const cloudinary = require('../utils/cloudinaryConfig')
 const fs = require("fs");
 const axios = require("axios")
 const jwt = require('jsonwebtoken')
-const { budgetRequestDuplication } = require('../Controller/Anomaly-Detection/rule-based/detectDuplication')
+const { totalLength, budgetRequestDuplication } = require('../Controller/Anomaly-Detection/rule-based/detectDuplication')
 
 
 //GET ALL BUDGET REQUEST
@@ -39,7 +39,9 @@ const addBudgetRequest = async (req, res) => {
             req.io.emit('receive_budget_request_pending', requestData)
             req.io.emit('receive_payable_length', requestData.pendingBudgetRequestsCount.totalCount)
             const result = await budgetRequestDuplication()
-            io.emit('receive_budget_req_duplication', result)
+            req.io.emit('receive_budget_req_duplication', result)
+            const totalAnomalies = await totalLength()
+            req.io.emit('receive_total_anomalies', totalAnomalies)
         }
     }
     catch (err){
@@ -74,6 +76,8 @@ const addBudgetRequestFinance = async(req, res) => {
             req.io.emit('receive_payable_length', requestData.pendingBudgetRequestsCount.totalCount)
             const result = await budgetRequestDuplication()
             req.io.emit('receive_budget_req_duplication', result)
+            const totalAnomalies = await totalLength()
+            req.io.emit('receive_total_anomalies', totalAnomalies)
             res.status(200).json({msg: 'Your Request is on process'})
         }
     }

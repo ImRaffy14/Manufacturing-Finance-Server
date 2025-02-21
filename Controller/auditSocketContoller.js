@@ -5,7 +5,7 @@ const { getToAuditRecords } = require('../Model/invoiceAggregation')
 const { totalCompanyCash } = require('../Model/totalCashAggregation')
 const { aggregateTransactionsCurrentMonth } = require('../Model/collectionAnalyticsAggregation')
 const { inflowDuplication } = require('../Controller/Anomaly-Detection/rule-based/detectDuplication')
-const { verifyPassword } = require('../middleware/passwordVerification')
+const { totalLength, verifyPassword } = require('../middleware/passwordVerification')
 
 
 const bcrypt = require('bcryptjs')
@@ -66,6 +66,9 @@ module.exports = (socket, io) => {
 
         const resultDuplication = await inflowDuplication()
         io.emit('receive_inflow_duplication', resultDuplication)
+
+        const totalAnomalies = await totalLength()
+        io.emit('receive_total_anomalies', totalAnomalies)
 
     }
 

@@ -1,6 +1,6 @@
 const { oRunAnomalyDetection } = require('../Controller/Anomaly-Detection/machine-learning/outflowAutoencoder')
 const { iRunAnomalyDetection } = require('../Controller/Anomaly-Detection/machine-learning/inflowAutoencoder')
-const { purchaseOrderDuplication, inflowDuplication, outflowDuplication, budgetRequestDuplication, suspiciousLogin } = require('../Controller/Anomaly-Detection/rule-based/detectDuplication')
+const { totalLength, purchaseOrderDuplication, inflowDuplication, outflowDuplication, budgetRequestDuplication, suspiciousLogin } = require('../Controller/Anomaly-Detection/rule-based/detectDuplication')
 const failedAttemptRecords = require('../Model/failedAttemptsModel')
 const resolvedAnomalies = require('../Model/processAnomaliesModel')
 const blacklistedIp = require('../Model/blacklistedIpModel')
@@ -10,6 +10,7 @@ const inflowTransactionRecords = require('../Model/inflowsTransactionModel')
 const outflowTransactionRecords = require('../Model/outflowsTransactionModel')
 const budgetRequestRecords = require('../Model/budgetRequestModel')
 const purchaseOrderRecords = require('../Model/invoiceRecordsModel')
+
 
 module.exports = (socket, io ) => {
     
@@ -106,26 +107,72 @@ module.exports = (socket, io ) => {
     // INVESTIGATE ANOMALY
     const handleInvestigateAnomaly = async (data) => {
         try{
-            const isSaved = await resolvedAnomalies.find({ dataId: data.dataId, anomalyFrom: data.anomalyFrom})
+
+            const user = await verifyPassword(data.userName, data.password)
+            if(!user){
+                return socket.emit('error_verification', {msg: 'Invalid Credentials'})
+            }
+
+            const isSaved = await resolvedAnomalies.find({ dataId: data.rowData.dataId, anomalyFrom: data.rowData.anomalyFrom})
             if(isSaved.length > 0){
-                return socket.emit('new_investigate_error', { msg: "This Data is already on investigation"})
+                if(data.rowData.anomalyFrom === "Outflow Transactions Data"  && data.rowData.anomalyType === "Data Discrepancy"){
+                    return socket.emit('new_investigate_error', { msg: "This Data is already on investigation", modalType: "outflow anomaly"})
+                }
+                else if(data.rowData.anomalyFrom === "Inflow Transactions Data"  && data.rowData.anomalyType === "Data Discrepancy"){
+                    return socket.emit('new_investigate_error', { msg: "This Data is already on investigation", modalType: "inflow anomaly"})
+                }
+                else if(data.rowData.anomalyFrom === "Inflow Transactions Data"  && data.rowData.anomalyType === "Data Duplication"){
+                    return socket.emit('new_investigate_error', { msg: "This Data is already on investigation", modalType: "inflow duplication"})
+                }
+                else if(data.rowData.anomalyFrom === "Outflow Transactions Data"  && data.rowData.anomalyType === "Data Duplication"){
+                    return socket.emit('new_investigate_error', { msg: "This Data is already on investigation", modalType: "outflow duplication"})
+                }
+                else if(data.rowData.anomalyFrom === "Budget Request Data"){
+                    return socket.emit('new_investigate_error', { msg: "This Data is already on investigation", modalType: "budget req duplication"})
+                }
+                else if(data.rowData.anomalyFrom === "Purchase Order Data"){
+                    return socket.emit('new_investigate_error', { msg: "This Data is already on investigation", modalType: "purchase order duplication"})
+                }
             }
 
             const newRA = new resolvedAnomalies({
-                anomalyType: data.anomalyType,
-                dataId: data.dataId,
-                anomalyFrom: data.anomalyFrom,
-                description: data.description,
-                investigateBy: data.investigateBy,
-                investigateDate: data.investigateDate,
-                status: data.status
+                anomalyType: data.rowData.anomalyType,
+                dataId: data.rowData.dataId,
+                anomalyFrom: data.rowData.anomalyFrom,
+                description: data.rowData.description,
+                investigateBy: data.rowData.investigateBy,
+                investigateDate: data.rowData.investigateDate,
+                status: data.rowData.status
             })
 
-            await newRA.save()
+            const savedRA = await newRA.save()
+            if(savedRA.anomalyFrom === "Outflow Transactions Data"  && savedRA.anomalyType === "Data Discrepancy"){
+                socket.emit('receive_new_investigate', { modalType: "outflow anomaly"})
+            }
+            else if(savedRA.anomalyFrom === "Inflow Transactions Data"  && savedRA.anomalyType === "Data Discrepancy"){
+                socket.emit('receive_new_investigate', { modalType: "inflow anomaly"})
+            }
+            else if(savedRA.anomalyFrom === "Outflow Transactions Data"  && savedRA.anomalyType === "Data Duplication"){
+                socket.emit('receive_new_investigate', { modalType: "outflow duplication"})
+            }
+            else if(savedRA.anomalyFrom === "Inflow Transactions Data"  && savedRA.anomalyType === "Data Duplication"){
+                socket.emit('receive_new_investigate', { modalType: "inflow duplication"})
+            }
+            else if(savedRA.anomalyFrom === "Budget Request Data"){
+                socket.emit('receive_new_investigate', { modalType: "budget req duplication"})
+            }
+            else if(savedRA.anomalyFrom === "Purchase Order Data"){
+                socket.emit('receive_new_investigate', { modalType: "purchase order duplication"})
+            }
+            else{
+                socket.emit('receive_new_investigate', { modalType: "Data not found"})
+            }
 
-            socket.emit('receive_new_investigate')
+            
             const result = await resolvedAnomalies.find({}).sort({ createdAt: 1 })
             io.emit('receive_resolved_anomalies', result)
+            const totalAnomalies = await totalLength()
+            io.emit('receive_total_anomalies', totalAnomalies)
         }
         catch(error){
             console.error(`Resolve anomaly error: ${error.message}`)
@@ -141,16 +188,24 @@ module.exports = (socket, io ) => {
     // RESOLVE ANOMALY REVERT
     const revertAnomaly = async (data) => {
         try{
-            const result = await resolvedAnomalies.findByIdAndUpdate(data._id, {
-                resolvedBy: data.resolvedBy,
-                resolvedDate: data.resolvedDate,
-                resolutionAction: data.resolutionAction,
-                status: data.status
+
+            const user = await verifyPassword(data.userName, data.password)
+            if(!user){
+                return socket.emit('error_verification', {msg: 'Invalid Credentials'})
+            }
+
+            const result = await resolvedAnomalies.findByIdAndUpdate(data.rowData._id, {
+                resolvedBy: data.rowData.resolvedBy,
+                resolvedDate: data.rowData.resolvedDate,
+                resolutionAction: data.rowData.resolutionAction,
+                status: data.rowData.status
             })
 
-            socket.emit('response_resolved', { msg: `${result._id} is now resolved`})
+            socket.emit('response_resolved', { msg: `${result._id} is now resolved`, modalType: 'revert'})
             const resolvedAnomolies = await resolvedAnomalies.find({}).sort({ createdAt: 1 })
             io.emit('receive_resolved_anomalies', resolvedAnomolies)
+            const totalAnomalies = await totalLength()
+            io.emit('receive_total_anomalies', totalAnomalies)
         }
         catch(error){
             console.error(`Resolved revert anomaly error: ${error.message}`)
@@ -160,46 +215,52 @@ module.exports = (socket, io ) => {
     // RESOLVE ANOMALY REMOVE
     const removeAnomaly = async (data) => {
         try{
-            if(data.anomalyFrom === "Inflow Transactions Data" && data.anomalyType === "Data Discrepancy"){
-                const result = await inflowTransactionRecords.findOneAndDelete({ _id: data.dataId})
+
+            const user = await verifyPassword(data.userName, data.password)
+            if(!user){
+                return socket.emit('error_verification', {msg: 'Invalid Credentials'})
+            }
+
+            if(data.rowData.anomalyFrom === "Inflow Transactions Data" && data.rowData.anomalyType === "Data Discrepancy"){
+                const result = await inflowTransactionRecords.findOneAndDelete({ _id: data.rowData.dataId})
                 if(!result){
                     return socket.emit('response_resolved', { errMsg: 'Data not found'})
                 }
                 await purchaseOrderRecords.findOneAndDelete({ _id: result.invoiceId})
             }
-            else if(data.anomalyFrom === "Inflow Transactions Data" && data.anomalyType === "Data Duplication"){
-                const result = await inflowTransactionRecords.deleteMany({ invoiceId: data.dataId})
+            else if(data.rowData.anomalyFrom === "Inflow Transactions Data" && data.rowData.anomalyType === "Data Duplication"){
+                const result = await inflowTransactionRecords.deleteMany({ invoiceId: data.rowData.dataId})
                 if(!result){
                     return socket.emit('response_resolved', { errMsg: 'Data not found'})
                 }
                 const inflowDupli = await inflowDuplication()
                 io.emit('receive_inflow_duplication', inflowDupli)
             }
-            else if(data.anomalyFrom === "Outflow Transactions Data" && data.anomalyType === "Data Duplication"){
-                const result =  await outflowTransactionRecords.findOneAndDelete({ payableId: data.dataId})
+            else if(data.rowData.anomalyFrom === "Outflow Transactions Data" && data.rowData.anomalyType === "Data Duplication"){
+                const result =  await outflowTransactionRecords.findOneAndDelete({ payableId: data.rowData.dataId})
                 if(!result){
                     return socket.emit('response_resolved', { errMsg: 'Data not found'})
                 }
                 const outflowDupli = await outflowDuplication()
                 io.emit('receive_outflow_duplication', outflowDupli)
             }
-            else if(data.anomalyFrom === "Outflow Transactions Data"){
-                const result =  await outflowTransactionRecords.findOneAndDelete({ _id: data.dataId})
+            else if(data.rowData.anomalyFrom === "Outflow Transactions Data"){
+                const result =  await outflowTransactionRecords.findOneAndDelete({ _id: data.rowData.dataId})
                 if(!result){
                     return socket.emit('response_resolved', { errMsg: 'Data not found'})
                 }
                 await budgetRequestRecords.findOneAndDelete({ _id: result.payableId})
             }
-            else if(data.anomalyFrom === "Budget Request Data"){
-                const result =  await budgetRequestRecords.deleteMany({ requestId: data.dataId})
+            else if(data.rowData.anomalyFrom === "Budget Request Data"){
+                const result =  await budgetRequestRecords.deleteMany({ requestId: data.rowData.dataId})
                 if(!result){
                     return socket.emit('response_resolved', { errMsg: 'Data not found'})
                 }
                 const budgetRequestDupli = await budgetRequestDuplication()
                 io.emit('receive_budget_req_duplication', budgetRequestDupli)
             }
-            else if(data.anomalyFrom === "Purchase Order Data"){
-                const result = await purchaseOrderRecords.deleteMany({ orderNumber: data.dataId})
+            else if(data.rowData.anomalyFrom === "Purchase Order Data"){
+                const result = await purchaseOrderRecords.deleteMany({ orderNumber: data.rowData.dataId})
                 if(!result){
                     return socket.emit('response_resolved', { errMsg: 'Data not found'})
                 }
@@ -210,17 +271,19 @@ module.exports = (socket, io ) => {
                return socket.emit('response_resolved', { errMsg: 'Data not found.'})
             }
 
-            const result = await resolvedAnomalies.findByIdAndUpdate(data._id, {
-                resolvedBy: data.resolvedBy,
-                resolvedDate: data.resolvedDate,
-                resolutionAction: data.resolutionAction,
-                status: data.status
+            const result = await resolvedAnomalies.findByIdAndUpdate(data.rowData._id, {
+                resolvedBy: data.rowData.resolvedBy,
+                resolvedDate: data.rowData.resolvedDate,
+                resolutionAction: data.rowData.resolutionAction,
+                status: data.rowData.status
             })
 
 
-            socket.emit('response_resolved', { msg: `${result._id} is now resolved and the affected entities are fixed`})
+            socket.emit('response_resolved', { msg: `${result._id} is now resolved and the affected entities are fixed`, modalType: 'remove'})
             const resolvedAnomolies = await resolvedAnomalies.find({}).sort({ createdAt: 1 })
             io.emit('receive_resolved_anomalies', resolvedAnomolies)
+            const totalAnomalies = await totalLength()
+            io.emit('receive_total_anomalies', totalAnomalies)
         }
         catch(error){
             console.error(`Resolved remove anomaly error: ${error.message}`)
@@ -258,7 +321,13 @@ module.exports = (socket, io ) => {
           }
     }
 
+    // GET TOTAL ANOMALY COUNT
+    const getTotalAnomalies = async (data) => {
+        const totalAnomalies = await totalLength()
+        socket.emit('receive_total_anomalies', totalAnomalies)
+    }
 
+    socket.on('get_total_anomalies', getTotalAnomalies)
     socket.on('remove_resolved_anomaly', removeAnomaly)
     socket.on('revert_resolved_anomaly', revertAnomaly)
     socket.on('block_ip_FAL', handleBlockIp)

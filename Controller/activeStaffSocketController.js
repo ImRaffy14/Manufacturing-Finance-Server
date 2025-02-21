@@ -1,6 +1,6 @@
 const activeStaffRecords = require('../Model/activeStaffModel')
 const blacklistedIp = require('../Model/blacklistedIpModel')
-const { suspiciousLogin } = require('../Controller/Anomaly-Detection/rule-based/detectDuplication')
+const { totalLength, suspiciousLogin } = require('../Controller/Anomaly-Detection/rule-based/detectDuplication')
 const UAParser = require("ua-parser-js");
 const axios = require('axios')
 const { verifyPassword } = require('../middleware/passwordVerification')
@@ -59,6 +59,8 @@ module.exports = (socket, io) => {
 
       const resultDuplication = await suspiciousLogin()
       io.emit('receive_suspicious_login', resultDuplication)
+      const totalAnomalies = await totalLength()
+      io.emit('receive_total_anomalies', totalAnomalies)
 
       }
       catch (err) {
@@ -80,6 +82,8 @@ module.exports = (socket, io) => {
         io.emit('receive_active_staff', result)
         const resultDuplication = await suspiciousLogin()
         io.emit('receive_suspicious_login', resultDuplication)
+        const totalAnomalies = await totalLength()
+        io.emit('receive_total_anomalies', totalAnomalies)
       }
     }
     catch(error){
@@ -104,6 +108,8 @@ module.exports = (socket, io) => {
 
       const resultDuplication = await suspiciousLogin()
       io.emit('receive_suspicious_login', resultDuplication)
+      const totalAnomalies = await totalLength()
+      io.emit('receive_total_anomalies', totalAnomalies)
     }
     catch(error){
       console.error(`force disconnect staff error: ${error.message}`)
@@ -139,6 +145,8 @@ module.exports = (socket, io) => {
 
         const resultDuplication = await suspiciousLogin()
         io.emit('receive_suspicious_login', resultDuplication)
+        const totalAnomalies = await totalLength()
+        io.emit('receive_total_anomalies', totalAnomalies)
     }
     catch(error){
       console.error(`block IP address Manual Error: ${error.message}`)

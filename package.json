@@ -18,6 +18,7 @@
     "nodemailer": "^6.10.0",
     "nodemon": "^3.1.4",
     "socket.io": "^4.7.5",
+    "ssh2": "^1.16.0",
     "ua-parser-js": "^2.0.2"
   },
   "name": "manufacturing-finance-server",

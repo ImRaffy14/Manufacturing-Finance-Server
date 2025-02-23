@@ -56,6 +56,8 @@ module.exports = (socket, io) => {
 
       const result = await activeStaffRecords.find({})
       io.emit('receive_active_staff', result)
+      const count = result.length
+      io.emit("receive_active_staff_count", count)
 
       const resultDuplication = await suspiciousLogin()
       io.emit('receive_suspicious_login', resultDuplication)
@@ -80,6 +82,8 @@ module.exports = (socket, io) => {
       if(offlineStaff){
         const result = await activeStaffRecords.find({})
         io.emit('receive_active_staff', result)
+        const count = result.length
+        io.emit("receive_active_staff_count", count)
         const resultDuplication = await suspiciousLogin()
         io.emit('receive_suspicious_login', resultDuplication)
         const totalAnomalies = await totalLength()
@@ -104,6 +108,8 @@ module.exports = (socket, io) => {
       io.to(data.row.socketId).emit("force_disconnect");
       const result = await activeStaffRecords.find({})
       io.emit('receive_active_staff', result)
+      const count = result.length
+      io.emit("receive_active_staff_count", count)
       socket.emit('active_staff_success', {msg: `Client is now disconnected`})
 
       const resultDuplication = await suspiciousLogin()
@@ -141,6 +147,8 @@ module.exports = (socket, io) => {
         io.to(data.socketId).emit("force_disconnect");
         const result = await activeStaffRecords.find({})
         io.emit('receive_active_staff', result)
+        const count = result.length
+        io.emit("receive_active_staff_count", count)
         socket.emit('active_staff_success', {msg: `Client is now blacklisted`})
 
         const resultDuplication = await suspiciousLogin()
@@ -154,6 +162,15 @@ module.exports = (socket, io) => {
     }
   }
 
+
+  // GET ACTIVE STAFF COUNT
+  const activeStaffCount = async () => {
+    const active = await activeStaffRecords.find({})
+    const count = active.length
+    socket.emit("receive_active_staff_count", count)
+  }
+
+  socket.on("get_active_staff_count", activeStaffCount)
   socket.on('block_ip_address', blockIpAddress)
   socket.on('force_disconnect_staff', forceDisconnectStaff)
   socket.on('get_active_staff', getActiveStaff)

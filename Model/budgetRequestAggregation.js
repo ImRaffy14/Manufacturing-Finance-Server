@@ -6,7 +6,7 @@ const pendingRequests = async () => {
 
     const pendingBudgetRequestsData = await budgetRequestData.aggregate([
         {
-        $match: { status: {$in: ['Pending', 'On process']} } 
+        $match: { status: {$in: ['On process']} } 
         },
         {
         $group: {

@@ -144,7 +144,7 @@ module.exports = (socket, io) => {
         const blacklistRecords = await blacklistedIp.find({})
         io.emit('receive_blacklisted', blacklistRecords)
         await activeStaffRecords.findOneAndDelete({ ipAddress: data.row.ipAddress })
-        io.to(data.rowData.socketId).emit("force_disconnect");
+        io.to(data.row.socketId).emit("force_disconnect");
         const result = await activeStaffRecords.find({})
         io.emit('receive_active_staff', result)
         const count = result.length

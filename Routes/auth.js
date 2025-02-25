@@ -824,7 +824,7 @@ router.post('/login', firstAttempt, async (req, res) => {
             httpOnly: true, 
             secure: true, 
             sameSite: 'None', 
-            maxAge: 24 * 60 * 60 * 1000 // 1 day expiration
+            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days in milliseconds
         });
 
 

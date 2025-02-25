@@ -36,6 +36,7 @@ const activeStaffSocket = require("./Controller/activeStaffSocketController")
 const anomalyDetectionSocket = require("./Controller/anomalyDetectionSocketController")
 const blacklistedSocket = require("./Controller/blacklistedSocketController")
 const terminalSocket = require("./Controller/ternimalSocketController")
+const chartOfAccountSocket = require("./Controller/chartOfAccountSocketController")
 
 
 //FOR TESTING
@@ -233,6 +234,7 @@ mongoose.connect(process.env.MONGGO_URI)
         anomalyDetectionSocket(socket, io)
         blacklistedSocket(socket, io)
         terminalSocket(socket, io)
+        chartOfAccountSocket(socket, io)
         
          //User Disconnects
         socket.on("disconnect", () => {

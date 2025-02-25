@@ -26,7 +26,7 @@ const laborCost = async () => {
         {
             $match: {
                 department: 'Logistic1',
-                category: 'Capital Expenditure'
+                category: 'Capital Expenditures'
             }
         },
 

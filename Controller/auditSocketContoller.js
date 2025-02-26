@@ -4,8 +4,8 @@ const invoiceRecords = require('../Model/invoiceRecordsModel')
 const { getToAuditRecords } = require('../Model/invoiceAggregation')
 const { totalCompanyCash } = require('../Model/totalCashAggregation')
 const { aggregateTransactionsCurrentMonth } = require('../Model/collectionAnalyticsAggregation')
-const { inflowDuplication } = require('../Controller/Anomaly-Detection/rule-based/detectDuplication')
-const { totalLength, verifyPassword } = require('../middleware/passwordVerification')
+const { totalLength, inflowDuplication } = require('../Controller/Anomaly-Detection/rule-based/detectDuplication')
+const { verifyPassword } = require('../middleware/passwordVerification')
 
 
 const bcrypt = require('bcryptjs')
@@ -15,14 +15,19 @@ module.exports = (socket, io) => {
     //GET TIME
     function getCurrentDateTime() {
         const now = new Date();
+        
         const date = now.toLocaleDateString('en-US'); 
-        const time = now.toLocaleTimeString('en-US', { 
-            hour12: false, 
-            hour: '2-digit', 
-            minute: '2-digit', 
-            second: '2-digit' 
-        });
+        
+        let hours = now.getHours();
+        let minutes = now.getMinutes();
+        let seconds = now.getSeconds();
+        
+        hours = hours < 10 ? `0${hours}` : hours;
+        minutes = minutes < 10 ? `0${minutes}` : minutes;
+        seconds = seconds < 10 ? `0${seconds}` : seconds;
     
+        const time = `${hours}:${minutes}:${seconds}`;
+        
         return `${date} ${time}`;
     }
 

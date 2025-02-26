@@ -18,16 +18,22 @@ module.exports = (socket, io) =>{
     //GET TIME
     function getCurrentDateTime() {
         const now = new Date();
+        
         const date = now.toLocaleDateString('en-US'); 
-        const time = now.toLocaleTimeString('en-US', { 
-            hour12: false, 
-            hour: '2-digit', 
-            minute: '2-digit', 
-            second: '2-digit' 
-        });
+        
+        let hours = now.getHours();
+        let minutes = now.getMinutes();
+        let seconds = now.getSeconds();
+        
+        hours = hours < 10 ? `0${hours}` : hours;
+        minutes = minutes < 10 ? `0${minutes}` : minutes;
+        seconds = seconds < 10 ? `0${seconds}` : seconds;
     
+        const time = `${hours}:${minutes}:${seconds}`;
+        
         return `${date} ${time}`;
     }
+
 
     //GET BUDGET ALLOCATION
     const budgetAllocation = async (data) => {
@@ -135,10 +141,27 @@ module.exports = (socket, io) =>{
             }
 
             const token = generateServiceToken();
-            const response = await axios.post(`${process.env.API_GATEWAY_URL}/finance/update-budget-status`, statusReqData, {
-              headers: { Authorization: `Bearer ${token}` },
-            });
-            console.log('Response from Logistic1:', response.data);
+
+            if(statusReqData.department === "Logistic1"){
+                const response = await axios.post(`${process.env.API_GATEWAY_URL}/finance/update-budget-status`, statusReqData, {
+                    headers: { Authorization: `Bearer ${token}` },
+                  });
+                  console.log('Response from Logistic1:', response.data);
+            }
+            else if(statusReqData.department === "H3"){
+                const response = await axios.post(`${process.env.API_GATEWAY_URL}/finance/update-budget-status`, statusReqData, {
+                    headers: { Authorization: `Bearer ${token}` },
+                  });
+                  console.log('Response from H3:', response.data);
+            }
+            else if(statusReqData.department === "HR4"){
+                const response = await axios.post(`${process.env.API_GATEWAY_URL}/finance/update-budget-status`, statusReqData, {
+                    headers: { Authorization: `Bearer ${token}` },
+                  });
+                  console.log('Response from HR4:', response.data);
+            }
+
+        
           } catch (error) {
             console.error('Something went wrong:', error.response?.data || error.message);
           }

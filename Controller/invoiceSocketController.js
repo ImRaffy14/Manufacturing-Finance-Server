@@ -1,6 +1,7 @@
 const invoiceRecords = require("../Model/invoiceRecordsModel")
 const { getPendingSalesData, getNonPendingRecords } = require("../Model/invoiceAggregation")
 const { totalLength, purchaseOrderDuplication } = require('../Controller/Anomaly-Detection/rule-based/detectDuplication')
+const orderInformationRecords = require('../Model/orderInformationModel')
 
 module.exports = (socket, io) => {
 
@@ -28,16 +29,24 @@ module.exports = (socket, io) => {
                 discounts: data.discounts, 
                 dueDate: data.dueDate, 
                 invoiceDate: data.invoiceDate, 
-                items: data.items, notes: data.notes, 
+                items: data.items, notes: data.notes,
                 orderDate: data.orderDate, 
                 orderNumber: data.orderNumber, 
-                shippingMethod: data.shippingMethod, 
+                shippingMethod: data.shippingMethod,
+                paymentMethod: data.paymentMethod,
                 subTotal: data.subtotal, 
                 terms: data.terms,
                 totalAmount: data.totalAmount})
             
             //RESPONSE INVOICE CREATED
             const response = await newInvoice.save()
+            if(response){
+                await orderInformationRecords.findOneAndDelete({ orderNumber: response.orderNumber})
+                const result = await orderInformationRecords.find({}).sort({ createdAt: -1})
+                const length = result.length
+                io.emit('receive_orders_length', length)
+                io.emit('receive_orders', result)
+            }
             socket.emit("response_create_invoice", response)
             
             //RESPONSE PENDING INVOICE

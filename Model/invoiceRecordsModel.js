@@ -22,10 +22,11 @@ const invoiceRecordsModel = new schema({
     items: { type: [itemSchema], required: true },
     notes: { type: String },
     orderDate: { type: String, required: true },
-    orderNumber: { type: Number, required: true },
+    orderNumber: { type: String, required: true },
     shippingMethod: { type: String, required: true },
     subTotal: { type: Number, required: true },
     terms: { type: String, required: true },
+    paymentMethod: { type: String, },
     totalAmount: { type: Number, required: true },
     Status: { type: String, default: "Pending"}
 }, { timestamps: true });

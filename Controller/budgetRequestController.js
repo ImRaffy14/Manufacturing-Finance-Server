@@ -145,6 +145,30 @@ const updateBudgetRequests = async (req, res) => {
                 console.error('Something went wrong:', error.response?.data || error.message);
               }
         }
+        else if(updateOsData.department === "HR3"){
+
+            try {
+                const token = generateServiceToken();
+                const response = await axios.post(`${process.env.API_GATEWAY_URL}/finance/update-budget-status`, updateOsData, {
+                  headers: { Authorization: `Bearer ${token}` },
+                });
+                console.log('Response from H3:', response.data);
+              } catch (error) {
+                console.error('Something went wrong:', error.response?.data || error.message);
+              }
+        }
+        else if(updateOsData.department === "H4"){
+
+            try {
+                const token = generateServiceToken();
+                const response = await axios.post(`${process.env.API_GATEWAY_URL}/finance/update-budget-status`, updateOsData, {
+                  headers: { Authorization: `Bearer ${token}` },
+                });
+                console.log('Response from H4:', response.data);
+              } catch (error) {
+                console.error('Something went wrong:', error.response?.data || error.message);
+              }
+        }
 
 
         if(requestId === "0000"){

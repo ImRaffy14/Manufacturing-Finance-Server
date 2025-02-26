@@ -12,6 +12,7 @@ module.exports = (socket, io) => {
         socket.emit('receive_specific_financial_report', result)
     }
     
+
     socket.on('get_financial_report', getFinancialReport)
     socket.on('get_specific_financial_report', getSpecificFinancialReport)
 }

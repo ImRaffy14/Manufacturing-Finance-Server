@@ -37,6 +37,9 @@ const anomalyDetectionSocket = require("./Controller/anomalyDetectionSocketContr
 const blacklistedSocket = require("./Controller/blacklistedSocketController")
 const terminalSocket = require("./Controller/ternimalSocketController")
 const chartOfAccountSocket = require("./Controller/chartOfAccountSocketController")
+const orderRoute = require("./Routes/ordersRoute")
+const orderInformationSocket = require("./Controller/orderInfoSocketController")
+const purchaseOrderRoute = require("./Routes/purchaseOrderRoute")
 
 
 //FOR TESTING
@@ -145,6 +148,8 @@ app.use(process.env.API_AUTH, authRoutes)
 app.use(process.env.API_TRAILS, auditTrailRoute)
 app.use(process.env.API_REQUEST_BUDGET, budgetRequestRoute)
 app.use(process.env.API_RECAPTCHA, recaptchaRoute)
+app.use(process.env.API_ORDER, orderRoute)
+app.use(process.env.API_PURCHASE_ORDER, purchaseOrderRoute)
 
 // FOR TESTING
 app.get('/detect-anomalies', async (req, res) => {
@@ -235,6 +240,7 @@ mongoose.connect(process.env.MONGGO_URI)
         blacklistedSocket(socket, io)
         terminalSocket(socket, io)
         chartOfAccountSocket(socket, io)
+        orderInformationSocket(socket, io)
         
          //User Disconnects
         socket.on("disconnect", () => {

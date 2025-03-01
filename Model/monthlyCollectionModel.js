@@ -3,7 +3,7 @@ const mongoose = require('mongoose')
 const schema = mongoose.Schema
 
 const monthlyCollectionSchema = new schema({
-    date: {type: String, required:true},
+    date: {type: String, required:true, unique: true},
     salesVolume: {type: Number, required: true},
     totalInflows: {type: Number, required: true},
     totalOutflows: {type: Number, required: true},

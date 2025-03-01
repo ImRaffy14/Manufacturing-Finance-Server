@@ -3,11 +3,11 @@ const mongoose = require('mongoose')
 const schema = mongoose.Schema
 
 const financialReportsSchema = new schema({
-    date:{ type: String, required: true },
+    date:{ type: String, required: true, unique: true  },
     
     //BALANCED SHEET
     //ASSETS
-    cash: { type: Number, unique: true },
+    cash: { type: Number, required: true },
     inventory: { type: Number, required: true },
     accountsReceivable: { type: Number, required: true },
     totalAssets: { type: Number, required: true },

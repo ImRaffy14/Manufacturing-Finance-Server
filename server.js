@@ -40,6 +40,7 @@ const chartOfAccountSocket = require("./Controller/chartOfAccountSocketControlle
 const orderRoute = require("./Routes/ordersRoute")
 const orderInformationSocket = require("./Controller/orderInfoSocketController")
 const purchaseOrderRoute = require("./Routes/purchaseOrderRoute")
+const financialReportRoute = require("./Controller/financialReportAdmin")
 
 
 //FOR TESTING
@@ -150,6 +151,7 @@ app.use(process.env.API_REQUEST_BUDGET, budgetRequestRoute)
 app.use(process.env.API_RECAPTCHA, recaptchaRoute)
 app.use(process.env.API_ORDER, orderRoute)
 app.use(process.env.API_PURCHASE_ORDER, purchaseOrderRoute)
+app.use('/integrate', financialReportRoute)
 
 // FOR TESTING
 app.get('/detect-anomalies', async (req, res) => {

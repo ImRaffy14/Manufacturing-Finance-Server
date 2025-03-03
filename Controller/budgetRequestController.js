@@ -137,24 +137,26 @@ const updateBudgetRequests = async (req, res) => {
 
             try {
                 const token = generateServiceToken();
-                const response = await axios.post(`${process.env.API_GATEWAY_URL}/finance/update-budget-status`, updateOsData, {
+                const response = await axios.post(`${process.env.API_GATEWAY_URL}/logistic1/update-budget-req-status`, updateOsData, {
                   headers: { Authorization: `Bearer ${token}` },
                 });
                 console.log('Response from Logistic1:', response.data);
               } catch (error) {
                 console.error('Something went wrong:', error.response?.data || error.message);
+                return res.status(400).json({msg: 'Something went wrong'})
               }
         }
         else if(updateOsData.department === "HR3"){
 
             try {
                 const token = generateServiceToken();
-                const response = await axios.post(`${process.env.API_GATEWAY_URL}/finance/update-budget-status`, updateOsData, {
+                const response = await axios.post(`${process.env.API_GATEWAY_URL}/hr3/update-status-purchase-order`, updateOsData, {
                   headers: { Authorization: `Bearer ${token}` },
                 });
                 console.log('Response from H3:', response.data);
               } catch (error) {
                 console.error('Something went wrong:', error.response?.data || error.message);
+                return res.status(400).json({msg: 'Something went wrong'})
               }
         }
         else if(updateOsData.department === "H4"){
@@ -167,6 +169,7 @@ const updateBudgetRequests = async (req, res) => {
                 console.log('Response from H4:', response.data);
               } catch (error) {
                 console.error('Something went wrong:', error.response?.data || error.message);
+                return res.status(400).json({msg: 'Something went wrong'})
               }
         }
 

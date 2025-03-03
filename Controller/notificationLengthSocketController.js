@@ -5,7 +5,9 @@ module.exports = (socket, io) =>{
 
     const payableLength = async (data) =>{
         const result = await pendingRequests()
-        socket.emit('receive_payable_length', result.pendingBudgetRequestsCount.totalCount)
+        const totalCount = result.onProcessRequestBudgetCount + result.pendingRequestBudgetCount
+        socket.emit('receive_payable_length', totalCount)
+        
     }
 
     const budgetRequestLength = async (data) =>{

@@ -30,8 +30,9 @@ const pendingRequests = async () => {
     }).sort({ createdAt: -1})
     
     const onProcessRequestBudgetCount = onProcessRequestBudget.length
+    const pendingRequestBudgetCount = pendingRequestBudget.length
 
-    return { pendingBudgetRequestsCount, pendingRequestBudget, onProcessRequestBudget, onProcessRequestBudgetCount}
+    return { pendingBudgetRequestsCount, pendingRequestBudget, onProcessRequestBudget, onProcessRequestBudgetCount, pendingRequestBudgetCount }
 }
 
 // ALL APPROVED OR DECLINED DATA

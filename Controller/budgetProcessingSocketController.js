@@ -169,8 +169,7 @@ module.exports = (socket, io) =>{
                   });
                   console.log('Response from HR4:', response.data);
             }
-
-        
+       
           } catch (error) {
             console.error('Something went wrong:', error.response?.data || error.message);
           }

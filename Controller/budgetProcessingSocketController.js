@@ -143,17 +143,25 @@ module.exports = (socket, io) =>{
             const token = generateServiceToken();
 
             if(statusReqData.department === "Logistic1"){
-                const response = await axios.post(`${process.env.API_GATEWAY_URL}/logistic1/update-budget-req-status`, statusReqData, {
-                    headers: { Authorization: `Bearer ${token}` },
-                  });
-                  console.log('Response from Logistic1:', response.data);
+                try {
+                    const response = await axios.post(`${process.env.API_GATEWAY_URL}/logistic1/update-budget-req-status`, statusReqData, {
+                        headers: { Authorization: `Bearer ${token}` },
+                    });
+                    console.log('Response from Logistic1:', response.data);
+                } catch (error) {
+                    if(error.response){
+                        console.log(error.response.data)
+                    }
+                    console.error('Something went wrong:', error.response?.data || error.message);
+                    return socket.emit("budget_notfound", {msg: "Error saving budget records."})
+                }
             }
             else if(statusReqData.department === "HR3"){
                 try{
                     const response = await axios.post(`${process.env.API_GATEWAY_URL}/hr3/update-status-purchase-order`, statusReqData, {
                         headers: { Authorization: `Bearer ${token}` },
-                      });
-                      console.log('Response from H3:', response.data);
+                    });
+                    console.log('Response from H3:', response.data);
                 }
                 catch(error){
                     if(error.response){
@@ -164,17 +172,23 @@ module.exports = (socket, io) =>{
                 }   
             }
             else if(statusReqData.department === "HR4"){
-                const response = await axios.post(`${process.env.API_GATEWAY_URL}/finance/update-budget-status`, statusReqData, {
-                    headers: { Authorization: `Bearer ${token}` },
-                  });
-                  console.log('Response from HR4:', response.data);
+                try {
+                    const response = await axios.post(`${process.env.API_GATEWAY_URL}/finance/update-budget-status`, statusReqData, {
+                        headers: { Authorization: `Bearer ${token}` },
+                    });
+                    console.log('Response from HR4:', response.data);
+                } catch (error) {
+                    console.error('Something went wrong:', error.response?.data || error.message);
+                    return socket.emit("budget_notfound", {msg: "Error saving budget records."})
+                }
             }
-       
-          } catch (error) {
+        } catch (error) {
             console.error('Something went wrong:', error.response?.data || error.message);
-          }
+            return socket.emit("budget_notfound", {msg: "Error saving budget records."})
+        }
     }
-      
+
+
     //SAVING TO OUTFLOWS RECORDS
     if(budgetReqData.status === "Approved"){
 

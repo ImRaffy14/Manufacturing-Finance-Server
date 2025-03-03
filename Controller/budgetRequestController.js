@@ -162,7 +162,7 @@ const updateBudgetRequests = async (req, res) => {
                 return res.status(400).json({msg: 'Something went wrong'})
               }
         }
-        else if(updateOsData.department === "H4"){
+        else if(updateOsData.department === "HR4"){
 
             try {
                 const token = generateServiceToken();
@@ -176,21 +176,6 @@ const updateBudgetRequests = async (req, res) => {
               }
         }
 
-
-        if(requestId === "0000"){
-            
-            try{
-                // const resultOs = await axios.post('https://manufacturing-logistic1-client-api.onrender.com/api/financeApproval/approved', updateOsData)
-                // if(resultOs){
-                // res.status(201).json({msg: `Budget Request from ${requestId} is now on process`})
-                // }
-            }
-            catch(error){
-                // res.status(500).json({msg: error.message})
-
-            }
-            
-        }
 
         //RESPONSE ON FINANCE CLIENT
         res.status(200).json({msg: `Budget Request from ${department} is now on process`})

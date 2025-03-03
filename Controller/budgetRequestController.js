@@ -117,7 +117,7 @@ const updateBudgetRequests = async (req, res) => {
 
         // TOKEN GENERATOR FOR GATEWAY
         const generateServiceToken = () => {
-            const payload = { service: 'Logistics 1' };
+            const payload = { service: 'Finance' };
             return jwt.sign(payload, process.env.GATEWAY_JWT_SECRET, { expiresIn: '1h' });
         };
 
@@ -142,6 +142,9 @@ const updateBudgetRequests = async (req, res) => {
                 });
                 console.log('Response from Logistic1:', response.data);
               } catch (error) {
+                if(error.response){
+                    console.log(error.response.data)
+                }
                 console.error('Something went wrong:', error.response?.data || error.message);
                 return res.status(400).json({msg: 'Something went wrong'})
               }

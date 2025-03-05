@@ -173,7 +173,7 @@ module.exports = (socket, io) =>{
             }
             else if(statusReqData.department === "HR4"){
                 try {
-                    const response = await axios.post(`${process.env.API_GATEWAY_URL}/finance/update-budget-status`, statusReqData, {
+                    const response = await axios.post(`${process.env.API_GATEWAY_URL}/hr4/api/budget-requests/updateStatusFinance`, statusReqData, {
                         headers: { Authorization: `Bearer ${token}` },
                     });
                     console.log('Response from HR4:', response.data);

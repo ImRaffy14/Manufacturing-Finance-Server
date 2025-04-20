@@ -8,7 +8,7 @@ const updateStatus = async (req, res) => {
     try{
         if (!Status || !purchaseOrderId) {
             return res.status(400).send("Status and purchaseOrderId are required");
-          }
+        }
         
         const isProcessed = await purchaseOrderRecords.findOne({_id: purchaseOrderId})
         if(isProcessed.Status === "To review" || isProcessed.Status === "Closed" ){

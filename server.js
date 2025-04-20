@@ -61,13 +61,13 @@ function getCurrentDateTime() {
 }
 
 //ALLOWED DOMAINS
-const allowedOrigins = ['https://finance.jjm-manufacturing.com', 'http://localhost:5173'];
+const allowedOrigins = ['https://finance.jjm-manufacturing.com', 'http://localhost:5173', 'https://finance.imraffydev.com'];
 
 //Socket Server
 const server = http.createServer(app)
 const io = new Server(server, {
   cors:{
-    origin:['https://finance.jjm-manufacturing.com', 'http://localhost:5173'],
+    origin:['https://finance.jjm-manufacturing.com', 'http://localhost:5173', 'https://finance.imraffydev.com'],
     methods: ['GET', 'POST'],
     credentials: true
   }
